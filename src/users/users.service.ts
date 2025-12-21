@@ -21,7 +21,7 @@ export class UsersService {
     this.handleError = handleError;
   }
 
-  async createUser(createUserDto: CreateUserDto) {
+  async createUser(createUserDto: CreateUserDto, token: string) {
     const roundOfSalt: number = this.configService.getOrThrow('ROUND_OF_SALT');
     const passwordHashed = await bcrypt.hash(
       createUserDto.password,
@@ -32,13 +32,12 @@ export class UsersService {
       const user = this.userRepository.create({
         ...createUserDto,
         password: passwordHashed,
+        verifyToken: token,
       });
 
       const newUser = await this.userRepository.save(user);
-      // eslint-disable-next-line @typescript-eslint/no-unused-vars
-      const { password: _, ...rest } = newUser;
 
-      return rest;
+      return newUser;
     } catch (error: unknown) {
       this.handleError(error);
     }
@@ -66,7 +65,7 @@ export class UsersService {
 
   async findUserByTerm(term: string) {
     const user = await this.userRepository.findOne({
-      where: [{ username: term }, { email: term }],
+      where: [{ username: term }, { email: term }, { verifyToken: term }],
       select: {
         password: true,
         id: true,
@@ -74,6 +73,7 @@ export class UsersService {
         email: true,
         isActive: true,
         isVerified: true,
+        verifyToken: true,
       },
     });
 
@@ -97,6 +97,18 @@ export class UsersService {
       // eslint-disable-next-line @typescript-eslint/no-unused-vars
       const { password: _, ...rest } = newUser;
       return rest;
+    } catch (error) {
+      this.handleError(error);
+    }
+  }
+
+  async verifyUser(user: User) {
+    user.isVerified = true;
+    user.verifyToken = null;
+
+    try {
+      const userVerified = await this.userRepository.save(user);
+      return userVerified;
     } catch (error) {
       this.handleError(error);
     }

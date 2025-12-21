@@ -41,6 +41,9 @@ export class User {
   @Column({ default: true, name: 'is_active' })
   isActive: boolean;
 
+  @Column({ default: null, nullable: true, name: 'verify_token', type: 'text' })
+  verifyToken: string | null;
+
   //TIMESTAMPS
   @CreateDateColumn({ name: 'created_at' })
   createdAt: Date;

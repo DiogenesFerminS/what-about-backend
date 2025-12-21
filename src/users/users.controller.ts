@@ -5,19 +5,15 @@ import {
   Param,
   ParseUUIDPipe,
   Patch,
-  Post,
   Req,
-  Res,
   UsePipes,
 } from '@nestjs/common';
 import { UsersService } from './users.service';
 import { ZodValidationPipe } from 'src/common/pipes/zodValidation.pipe';
-import { type CreateUserDto, createUserSchema } from './dto/create-user.dto';
 import { type Request, type Response } from 'express';
 import { ResponseMessageType } from 'src/common/interfaces/http-response.interface';
 import { type JwtPayload } from 'src/common/interfaces/jwt-payload.interface';
 import { GetUser } from 'src/common/decorators/get-user.decorator';
-import { Public } from 'src/common/decorators/public.decorator';
 import {
   type UpdateProfileDto,
   updateProfileSchema,
@@ -26,22 +22,6 @@ import {
 @Controller('users')
 export class UsersController {
   constructor(private readonly usersService: UsersService) {}
-
-  @Post()
-  @UsePipes(new ZodValidationPipe(createUserSchema))
-  @Public()
-  async createUser(
-    @Res({ passthrough: true }) response: Response,
-    @Body() createUserDto: CreateUserDto,
-  ) {
-    response.status(201);
-    const user = await this.usersService.createUser(createUserDto);
-    return {
-      ok: true,
-      message: ResponseMessageType.CREATED,
-      data: user,
-    };
-  }
 
   @Get('/profile')
   async getProfile(@Req() request: Request, @GetUser() payload: JwtPayload) {
