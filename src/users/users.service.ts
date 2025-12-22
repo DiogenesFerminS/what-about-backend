@@ -1,4 +1,9 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  Injectable,
+  InternalServerErrorException,
+  NotFoundException,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { User } from './entities/user.entity';
 import { Repository } from 'typeorm';
@@ -65,7 +70,7 @@ export class UsersService {
 
   async findUserByTerm(term: string) {
     const user = await this.userRepository.findOne({
-      where: [{ username: term }, { email: term }, { verifyToken: term }],
+      where: [{ username: term }, { email: term }],
       select: {
         password: true,
         id: true,
@@ -82,6 +87,14 @@ export class UsersService {
         ok: false,
         error: 'User not found',
         message: ResponseMessageType.NOT_FOUND,
+      });
+    }
+
+    if (!user.isActive) {
+      throw new BadRequestException({
+        ok: false,
+        error: 'Account inactive',
+        message: ResponseMessageType.BAD_REQUEST,
       });
     }
 
@@ -102,7 +115,18 @@ export class UsersService {
     }
   }
 
-  async verifyUser(user: User) {
+  async verifyUser(token: string) {
+    const user = await this.userRepository.findOne({
+      where: { verifyToken: token },
+    });
+
+    if (!user) {
+      throw new BadRequestException({
+        ok: false,
+        message: ResponseMessageType.BAD_REQUEST,
+        error: 'Invalid token',
+      });
+    }
     user.isVerified = true;
     user.verifyToken = null;
 
@@ -112,5 +136,48 @@ export class UsersService {
     } catch (error) {
       this.handleError(error);
     }
+  }
+
+  async updateToken(
+    userId: string,
+    token: string,
+    type: 'verifyToken' | 'resetPasswordToken',
+  ): Promise<void> {
+    try {
+      await this.userRepository.update(userId, {
+        [type]: token,
+      });
+    } catch {
+      throw new InternalServerErrorException({
+        ok: false,
+        message: ResponseMessageType.INTERNAL_SERVER_ERROR,
+        error: 'Update verify token failed',
+      });
+    }
+  }
+
+  async updatePassword(token: string, newPassword: string) {
+    const user = await this.userRepository.findOne({
+      where: { resetPasswordToken: token },
+    });
+
+    if (!user) {
+      throw new BadRequestException({
+        ok: false,
+        message: ResponseMessageType.BAD_REQUEST,
+        error: 'Invalid Token',
+      });
+    }
+
+    const roundOfSalt: number = this.configService.getOrThrow('ROUND_OF_SALT');
+    const passwordHashed = await bcrypt.hash(newPassword, roundOfSalt);
+
+    user.password = passwordHashed;
+    user.resetPasswordToken = null;
+
+    await this.userRepository.save(user);
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    const { password: _, ...rest } = user;
+    return rest;
   }
 }

@@ -16,6 +16,9 @@ export const envs = Joi.object({
   SMTP_SECURE: Joi.boolean().required(),
   SMTP_FROM: Joi.string().required(),
   FRONTEND_URL: Joi.string().required(),
+  CLOUDINARY_CLOUD_NAME: Joi.string().required(),
+  CLOUDINARY_API_KEY: Joi.string().required(),
+  CLOUDINARY_API_SECRET: Joi.string().required(),
 });
 
 export interface Envs {
@@ -34,4 +37,7 @@ export interface Envs {
   SMTP_SECURE: boolean;
   SMTP_FROM: string;
   FRONTEND_URL: string;
+  CLOUDINARY_API_SECRET: string;
+  CLOUDINARY_API_KEY: string;
+  CLOUDINARY_CLOUD_NAME: string;
 }

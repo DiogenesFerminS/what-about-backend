@@ -1,7 +1,9 @@
+import { Opinion } from 'src/opinions/entities/opinions.entity';
 import {
   Column,
   CreateDateColumn,
   Entity,
+  OneToMany,
   PrimaryGeneratedColumn,
   UpdateDateColumn,
 } from 'typeorm';
@@ -41,8 +43,26 @@ export class User {
   @Column({ default: true, name: 'is_active' })
   isActive: boolean;
 
-  @Column({ default: null, nullable: true, name: 'verify_token', type: 'text' })
+  @Column({
+    default: null,
+    nullable: true,
+    name: 'verify_token',
+    type: 'text',
+    unique: true,
+  })
   verifyToken: string | null;
+
+  @Column({
+    default: null,
+    nullable: true,
+    name: 'reset_password_token',
+    type: 'text',
+    unique: true,
+  })
+  resetPasswordToken: string | null;
+
+  @OneToMany(() => Opinion, (opinion) => opinion.user)
+  opinions: Opinion[];
 
   //TIMESTAMPS
   @CreateDateColumn({ name: 'created_at' })

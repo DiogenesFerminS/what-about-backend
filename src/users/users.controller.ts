@@ -5,7 +5,6 @@ import {
   Param,
   ParseUUIDPipe,
   Patch,
-  Req,
   UsePipes,
 } from '@nestjs/common';
 import { UsersService } from './users.service';
@@ -24,7 +23,7 @@ export class UsersController {
   constructor(private readonly usersService: UsersService) {}
 
   @Get('/profile')
-  async getProfile(@Req() request: Request, @GetUser() payload: JwtPayload) {
+  async getProfile(@GetUser() payload: JwtPayload) {
     const profile = await this.usersService.findOneById(payload.sub);
 
     return {

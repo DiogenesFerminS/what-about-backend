@@ -1,4 +1,10 @@
-import { Injectable, UnauthorizedException } from '@nestjs/common';
+import {
+  BadRequestException,
+  Injectable,
+  InternalServerErrorException,
+  Logger,
+  UnauthorizedException,
+} from '@nestjs/common';
 import { ResponseMessageType } from 'src/common/interfaces/http-response.interface';
 import { UsersService } from 'src/users/users.service';
 import { LoginDto } from './dto/login.dto';
@@ -7,9 +13,12 @@ import * as bcrypt from 'bcrypt';
 import { CreateUserDto } from 'src/users/dto/create-user.dto';
 import { MailService } from 'src/mail/mail.service';
 import * as crypto from 'crypto';
+import { type ResendEmailDto } from './dto/resend-email.dto';
+import { NewPasswordDto } from './dto/new-password.dto';
 
 @Injectable()
 export class AuthService {
+  private logger: Logger = new Logger('AUTH SERVICE');
   constructor(
     private usersService: UsersService,
     private jwtService: JwtService,
@@ -28,6 +37,14 @@ export class AuthService {
       });
     }
 
+    if (!user.isVerified) {
+      throw new UnauthorizedException({
+        ok: false,
+        error: 'Verify your email to log in',
+        message: ResponseMessageType.UNAUTHORIZED,
+      });
+    }
+
     const payload = { sub: user.id, username: user.username };
 
     return {
@@ -39,22 +56,77 @@ export class AuthService {
     const token = this.generateRandomToken();
     const newUser = await this.usersService.createUser(createUserDto, token);
 
-    await this.mailService.sendUserConfirmation(newUser, token);
+    this.mailService.sendUserConfirmation(newUser, token).catch((error) => {
+      this.logger.error('Error sending welcome email', error);
+    });
+
     return `An email has been sent to ${newUser.email}to verify your account`;
   }
 
   async validateToken(token: string) {
-    const user = await this.usersService.findUserByTerm(token);
-    if (!user) {
-      throw new UnauthorizedException({
+    const userVerified = await this.usersService.verifyUser(token);
+    return userVerified;
+  }
+
+  async resendValidateEmail({ email }: ResendEmailDto) {
+    const user = await this.usersService.findUserByTerm(email);
+
+    if (user.isVerified) {
+      throw new BadRequestException({
         ok: false,
-        message: ResponseMessageType.UNAUTHORIZED,
-        error: 'Invalid Token',
+        message: ResponseMessageType.BAD_REQUEST,
+        error: 'User already verified',
       });
     }
 
-    const userVerified = await this.usersService.verifyUser(user);
-    return userVerified;
+    const token = this.generateRandomToken();
+    await this.usersService.updateToken(user.id, token, 'verifyToken');
+
+    try {
+      await this.mailService.sendUserConfirmation(user, token);
+      return 'Verification link resent. Please check your inbox.';
+    } catch {
+      this.logger.error('Error to sending email');
+      throw new InternalServerErrorException({
+        ok: false,
+        message: ResponseMessageType.INTERNAL_SERVER_ERROR,
+        error: 'Error to sending email',
+      });
+    }
+  }
+
+  async sendResetPasswordEmail({ email }: ResendEmailDto) {
+    const user = await this.usersService.findUserByTerm(email);
+
+    if (!user.isVerified) {
+      throw new BadRequestException({
+        ok: false,
+        message: ResponseMessageType.BAD_REQUEST,
+        error: 'Verify your account to change your password',
+      });
+    }
+
+    const token = this.generateRandomToken();
+    await this.usersService.updateToken(user.id, token, 'resetPasswordToken');
+
+    try {
+      await this.mailService.sendResetPassword(user, token);
+      return 'An email has been sent with instructions to reset your password.';
+    } catch {
+      this.logger.error('Error to sending email');
+      throw new InternalServerErrorException({
+        ok: false,
+        message: ResponseMessageType.INTERNAL_SERVER_ERROR,
+        error: 'Error to sending email',
+      });
+    }
+  }
+
+  async updatePassword(token: string, newPassworDto: NewPasswordDto) {
+    return await this.usersService.updatePassword(
+      token,
+      newPassworDto.password,
+    );
   }
 
   private generateRandomToken() {

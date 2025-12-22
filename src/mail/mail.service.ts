@@ -25,4 +25,18 @@ export class MailService {
       },
     });
   }
+
+  async sendResetPassword(user: User, token: string) {
+    const url = `${this.configService.get('FRONTEND_URL')}/auth/reset-password?token=${token}`;
+
+    await this.mailerService.sendMail({
+      to: user.email,
+      subject: `Reset Your Password ${user.username}`,
+      template: './reset-password',
+      context: {
+        name: user.name || user.username,
+        url,
+      },
+    });
+  }
 }
