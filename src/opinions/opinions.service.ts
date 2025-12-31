@@ -6,6 +6,7 @@ import { Repository } from 'typeorm';
 import { CreateOpinionDto } from './dto/create-opinion.dto';
 import { CloudinaryService } from 'src/cloudinary/cloudinary.service';
 import { ResponseMessageType } from 'src/common/interfaces/http-response.interface';
+import { type PaginationDto } from 'src/common/dto/pagination.dto';
 
 @Injectable()
 export class OpinionsService {
@@ -33,6 +34,39 @@ export class OpinionsService {
     });
 
     return await this.opinionRepository.save(opinion);
+  }
+
+  async getAllOpinions({ limit, page }: PaginationDto) {
+    const skip = (page - 1) * limit;
+
+    const [opinions, total] = await this.opinionRepository
+      .createQueryBuilder('opinion')
+      .leftJoin('opinion.user', 'user')
+      .select([
+        'opinion.id',
+        'opinion.content',
+        'opinion.imageUrl',
+        'opinion.createdAt',
+        'opinion.isEdited',
+      ])
+      .addSelect(['user.id', 'user.username', 'user.email'])
+
+      .orderBy('opinion.createdAt', 'DESC')
+      .take(limit)
+      .skip(skip)
+
+      .getManyAndCount();
+
+    const lastPage = Math.ceil(total / limit);
+
+    return {
+      meta: {
+        total,
+        lastPage,
+        page,
+      },
+      data: opinions,
+    };
   }
 
   private async uploadImg(file: Express.Multer.File) {

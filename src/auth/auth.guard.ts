@@ -7,10 +7,10 @@ import {
 import { ConfigService } from '@nestjs/config';
 import { Reflector } from '@nestjs/core';
 import { JwtService } from '@nestjs/jwt';
-import { Request } from 'express';
+import { Request, Response } from 'express';
 import { IS_PUBLIC_KEY } from 'src/common/decorators/public.decorator';
+import { GetUserInterface } from 'src/common/interfaces/get-user.interface';
 import { ResponseMessageType } from 'src/common/interfaces/http-response.interface';
-import { JwtPayload } from 'src/common/interfaces/jwt-payload.interface';
 import { Envs } from 'src/common/schemas/envs.schema';
 
 @Injectable()
@@ -35,41 +35,37 @@ export class AuthGuard implements CanActivate {
       .switchToHttp()
       .getRequest<Request & { user: { id: string; username: string } }>();
 
-    const authHeader = request.headers.authorization;
+    const response = context.switchToHttp().getResponse<Response>();
 
-    if (!authHeader) {
-      throw new UnauthorizedException({
-        ok: false,
-        error: 'No authorization header provided',
-        message: ResponseMessageType.UNAUTHORIZED,
-      });
-    }
-
-    const [type, token] = authHeader.split(' ');
-
-    if (type !== 'Bearer') {
-      throw new UnauthorizedException({
-        ok: false,
-        error: 'Invalid token type',
-        message: ResponseMessageType.UNAUTHORIZED,
-      });
-    }
+    const token = request.cookies['auth-token'] as string | undefined;
 
     if (!token) {
       throw new UnauthorizedException({
         ok: false,
-        error: 'No token provided',
+        error: 'Authentication cookie not found',
         message: ResponseMessageType.UNAUTHORIZED,
       });
     }
 
     try {
-      const payload: JwtPayload = await this.jwtService.verifyAsync(token, {
-        secret: this.configService.getOrThrow('JWT_SECRET'),
+      const payload: GetUserInterface = await this.jwtService.verifyAsync(
+        token,
+        {
+          secret: this.configService.getOrThrow('JWT_SECRET'),
+        },
+      );
+
+      request.user = { id: payload.id, username: payload.username };
+    } catch (error: unknown) {
+      //TODO: Cambiar el secure a un env
+      response.clearCookie('auth-token', {
+        httpOnly: true,
+        secure: false,
+        sameSite: 'lax',
+        path: '/',
+        maxAge: 0,
       });
 
-      request.user = { id: payload.sub, username: payload.username };
-    } catch (error: unknown) {
       throw new UnauthorizedException({
         ok: false,
         error:

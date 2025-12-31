@@ -85,7 +85,7 @@ export class UsersService {
     if (!user) {
       throw new NotFoundException({
         ok: false,
-        error: 'User not found',
+        error: 'Invalid credentials',
         message: ResponseMessageType.NOT_FOUND,
       });
     }
@@ -102,6 +102,7 @@ export class UsersService {
   }
 
   async updateProfile(id: string, updateProfileDto: UpdateProfileDto) {
+    console.log(id);
     const oldUser = await this.findOneById(id);
     const newUser = this.userRepository.merge(oldUser, updateProfileDto);
 

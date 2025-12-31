@@ -5,26 +5,24 @@ import {
   Param,
   ParseUUIDPipe,
   Patch,
-  UsePipes,
 } from '@nestjs/common';
 import { UsersService } from './users.service';
 import { ZodValidationPipe } from 'src/common/pipes/zodValidation.pipe';
-import { type Request, type Response } from 'express';
 import { ResponseMessageType } from 'src/common/interfaces/http-response.interface';
-import { type JwtPayload } from 'src/common/interfaces/jwt-payload.interface';
 import { GetUser } from 'src/common/decorators/get-user.decorator';
 import {
   type UpdateProfileDto,
   updateProfileSchema,
 } from './dto/update-profile.dto';
+import { type GetUserInterface } from 'src/common/interfaces/get-user.interface';
 
 @Controller('users')
 export class UsersController {
   constructor(private readonly usersService: UsersService) {}
 
   @Get('/profile')
-  async getProfile(@GetUser() payload: JwtPayload) {
-    const profile = await this.usersService.findOneById(payload.sub);
+  async getProfile(@GetUser() payload: GetUserInterface) {
+    const profile = await this.usersService.findOneById(payload.id);
 
     return {
       ok: true,
@@ -34,13 +32,13 @@ export class UsersController {
   }
 
   @Patch('/update-profile')
-  @UsePipes(new ZodValidationPipe(updateProfileSchema))
   async updateProfile(
-    @GetUser() payload: JwtPayload,
-    @Body() updateProfileDto: UpdateProfileDto,
+    @GetUser() payload: GetUserInterface,
+    @Body(new ZodValidationPipe(updateProfileSchema))
+    updateProfileDto: UpdateProfileDto,
   ) {
     const profileUpdated = await this.usersService.updateProfile(
-      payload.sub,
+      payload.id,
       updateProfileDto,
     );
 

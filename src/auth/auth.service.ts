@@ -40,16 +40,14 @@ export class AuthService {
     if (!user.isVerified) {
       throw new UnauthorizedException({
         ok: false,
-        error: 'Verify your email to log in',
+        error: 'Please verify your account to log in, check your email.',
         message: ResponseMessageType.UNAUTHORIZED,
       });
     }
 
-    const payload = { sub: user.id, username: user.username };
+    const payload = { id: user.id, username: user.username };
 
-    return {
-      access_token: await this.jwtService.signAsync(payload),
-    };
+    return await this.jwtService.signAsync(payload);
   }
 
   async createUser(createUserDto: CreateUserDto) {
@@ -60,7 +58,7 @@ export class AuthService {
       this.logger.error('Error sending welcome email', error);
     });
 
-    return `An email has been sent to ${newUser.email}to verify your account`;
+    return `An email has been sent to ${newUser.email} to verify your account`;
   }
 
   async validateToken(token: string) {

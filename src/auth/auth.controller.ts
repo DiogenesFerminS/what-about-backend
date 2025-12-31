@@ -27,11 +27,41 @@ export class AuthController {
   @Post('login')
   @Public()
   @UsePipes(new ZodValidationPipe(loginSchema))
-  async login(@Body() loginDto: LoginDto) {
+  async login(
+    @Res({ passthrough: true }) res: Response,
+    @Body() loginDto: LoginDto,
+  ) {
+    const token = await this.authService.login(loginDto);
+    //TODO: Cambiar el secure a un env
+    res.cookie('auth-token', token, {
+      httpOnly: true,
+      secure: false,
+      sameSite: 'lax',
+      maxAge: 1000 * 60 * 60,
+      path: '/',
+    });
+
     return {
       ok: true,
       message: ResponseMessageType.SUCCESS,
-      data: await this.authService.login(loginDto),
+    };
+  }
+
+  @Get('logout')
+  @Public()
+  logout(@Res({ passthrough: true }) res: Response) {
+    //TODO: Cambiar el secure a un env
+    res.cookie('auth-token', null, {
+      httpOnly: true,
+      secure: false,
+      sameSite: 'lax',
+      maxAge: 0,
+      path: '/',
+    });
+
+    return {
+      ok: true,
+      message: ResponseMessageType.SUCCESS,
     };
   }
 
