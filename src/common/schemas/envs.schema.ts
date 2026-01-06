@@ -22,6 +22,7 @@ export const envs = Joi.object({
 });
 
 export interface Envs {
+  NODE_ENV: string;
   PORT: number;
   POSTGRES_USER: string;
   POSTGRES_PASS: string;

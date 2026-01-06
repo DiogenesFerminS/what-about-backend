@@ -49,7 +49,7 @@ export class OpinionsService {
         'opinion.createdAt',
         'opinion.isEdited',
       ])
-      .addSelect(['user.id', 'user.username', 'user.email'])
+      .addSelect(['user.id', 'user.username', 'user.email', 'user.name'])
 
       .orderBy('opinion.createdAt', 'DESC')
       .take(limit)

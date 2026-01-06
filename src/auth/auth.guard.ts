@@ -57,10 +57,9 @@ export class AuthGuard implements CanActivate {
 
       request.user = { id: payload.id, username: payload.username };
     } catch (error: unknown) {
-      //TODO: Cambiar el secure a un env
       response.clearCookie('auth-token', {
         httpOnly: true,
-        secure: false,
+        secure: this.configService.get('NODE_ENV') === 'production',
         sameSite: 'lax',
         path: '/',
         maxAge: 0,

@@ -9,9 +9,8 @@ async function bootstrap() {
 
   app.use(cookieParser());
 
-  //TODO: CAMBIAR EL LOCALHOST POR UNA ENV
   app.enableCors({
-    origin: 'http://localhost:3000',
+    origin: process.env.FRONTEND_URL,
     credentials: true,
     methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
   });

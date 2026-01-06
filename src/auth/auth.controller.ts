@@ -19,10 +19,14 @@ import { ResponseMessageType } from 'src/common/interfaces/http-response.interfa
 import { type Response } from 'express';
 import { type ResendEmailDto, resendEmailSchema } from './dto/resend-email.dto';
 import { type NewPasswordDto, newPasswordSchema } from './dto/new-password.dto';
+import { ConfigService } from '@nestjs/config';
 
 @Controller('auth')
 export class AuthController {
-  constructor(private authService: AuthService) {}
+  constructor(
+    private authService: AuthService,
+    private readonly configService: ConfigService,
+  ) {}
 
   @Post('login')
   @Public()
@@ -32,10 +36,10 @@ export class AuthController {
     @Body() loginDto: LoginDto,
   ) {
     const token = await this.authService.login(loginDto);
-    //TODO: Cambiar el secure a un env
+
     res.cookie('auth-token', token, {
       httpOnly: true,
-      secure: false,
+      secure: this.configService.get('NODE_ENV') === 'production',
       sameSite: 'lax',
       maxAge: 1000 * 60 * 60,
       path: '/',
@@ -50,10 +54,9 @@ export class AuthController {
   @Get('logout')
   @Public()
   logout(@Res({ passthrough: true }) res: Response) {
-    //TODO: Cambiar el secure a un env
     res.cookie('auth-token', null, {
       httpOnly: true,
-      secure: false,
+      secure: this.configService.get('NODE_ENV') === 'production',
       sameSite: 'lax',
       maxAge: 0,
       path: '/',

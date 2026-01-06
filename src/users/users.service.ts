@@ -3,6 +3,7 @@ import {
   Injectable,
   InternalServerErrorException,
   NotFoundException,
+  UnauthorizedException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { User } from './entities/user.entity';
@@ -102,7 +103,6 @@ export class UsersService {
   }
 
   async updateProfile(id: string, updateProfileDto: UpdateProfileDto) {
-    console.log(id);
     const oldUser = await this.findOneById(id);
     const newUser = this.userRepository.merge(oldUser, updateProfileDto);
 
@@ -163,9 +163,9 @@ export class UsersService {
     });
 
     if (!user) {
-      throw new BadRequestException({
+      throw new UnauthorizedException({
         ok: false,
-        message: ResponseMessageType.BAD_REQUEST,
+        message: ResponseMessageType.UNAUTHORIZED,
         error: 'Invalid Token',
       });
     }
