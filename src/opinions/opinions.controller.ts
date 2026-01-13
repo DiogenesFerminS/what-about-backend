@@ -4,12 +4,13 @@ import {
   FileTypeValidator,
   Get,
   MaxFileSizeValidator,
+  Param,
   ParseFilePipe,
+  ParseUUIDPipe,
   Post,
   Query,
   UploadedFile,
   UseInterceptors,
-  UsePipes,
 } from '@nestjs/common';
 import { OpinionsService } from './opinions.service';
 import { ZodValidationPipe } from 'src/common/pipes/zodValidation.pipe';
@@ -62,9 +63,36 @@ export class OpinionsController {
   }
 
   @Get()
-  @UsePipes(new ZodValidationPipe(paginationSchema))
-  async getAllOpinions(@Query() paginationDto: PaginationDto) {
-    const data = await this.opinionsService.getAllOpinions(paginationDto);
+  async getAllOpinions(
+    @Query(new ZodValidationPipe(paginationSchema))
+    paginationDto: PaginationDto,
+    @GetUser() payload: GetUserInterface,
+  ) {
+    const data = await this.opinionsService.getAllOpinions(
+      paginationDto,
+      payload.id,
+    );
+
+    return {
+      ok: true,
+      MessageChannel: ResponseMessageType.SUCCESS,
+      data,
+    };
+  }
+
+  @Get('user/:id')
+  async getAllOpinionsByUser(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Query(new ZodValidationPipe(paginationSchema))
+    paginationDto: PaginationDto,
+    @GetUser() payload: GetUserInterface,
+  ) {
+    const data = await this.opinionsService.getAllByUserId({
+      limit: paginationDto.limit,
+      page: paginationDto.page,
+      userId: id,
+      viewerId: payload.id,
+    });
 
     return {
       ok: true,

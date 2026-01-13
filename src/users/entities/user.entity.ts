@@ -1,3 +1,4 @@
+import { Like } from 'src/likes/entities/like.entity';
 import { Opinion } from 'src/opinions/entities/opinions.entity';
 import {
   Column,
@@ -35,6 +36,9 @@ export class User {
 
   @Column({ nullable: true })
   location?: string;
+
+  @OneToMany(() => Like, (like) => like.user)
+  likes: Like[];
 
   // STATE
   @Column({ default: false, name: 'is_verified' })

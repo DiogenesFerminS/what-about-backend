@@ -1,3 +1,4 @@
+import { Like } from 'src/likes/entities/like.entity';
 import { User } from 'src/users/entities/user.entity';
 import {
   Column,
@@ -6,9 +7,9 @@ import {
   ManyToOne,
   PrimaryGeneratedColumn,
   UpdateDateColumn,
-  JoinColumn,
   Index,
   DeleteDateColumn,
+  OneToMany,
 } from 'typeorm';
 
 @Entity()
@@ -22,13 +23,16 @@ export class Opinion {
   @Column('varchar', { nullable: true, name: 'image_url' })
   imageUrl?: string | null;
 
+  @OneToMany(() => Like, (like) => like.opinion)
+  likes: Like[];
+
   @Column('boolean', { default: false, name: 'is_edited' })
   isEdited: boolean;
 
   @DeleteDateColumn({ name: 'deleted_at', select: false })
   deletedAt: Date;
 
-  @CreateDateColumn({ name: 'created_at' })
+  @CreateDateColumn({ name: 'created_at', type: 'timestamptz' })
   @Index()
   createdAt: Date;
 
@@ -36,9 +40,7 @@ export class Opinion {
   updatedAt: Date;
 
   @ManyToOne(() => User, (user) => user.opinions, {
-    eager: true,
     onDelete: 'CASCADE',
   })
-  @JoinColumn({ name: 'user_id' })
   user: User;
 }

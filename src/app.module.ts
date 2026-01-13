@@ -9,6 +9,7 @@ import { APP_GUARD } from '@nestjs/core';
 import { MailModule } from './mail/mail.module';
 import { OpinionsModule } from './opinions/opinions.module';
 import { CloudinaryModule } from './cloudinary/cloudinary.module';
+import { LikesModule } from './likes/likes.module';
 
 @Module({
   imports: [
@@ -36,13 +37,14 @@ import { CloudinaryModule } from './cloudinary/cloudinary.module';
       throttlers: [
         {
           ttl: 60000,
-          limit: 10,
+          limit: 20,
         },
       ],
     }),
     MailModule,
     OpinionsModule,
     CloudinaryModule,
+    LikesModule,
   ],
   controllers: [],
   providers: [

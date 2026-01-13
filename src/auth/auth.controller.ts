@@ -52,7 +52,6 @@ export class AuthController {
   }
 
   @Get('logout')
-  @Public()
   logout(@Res({ passthrough: true }) res: Response) {
     res.cookie('auth-token', null, {
       httpOnly: true,
