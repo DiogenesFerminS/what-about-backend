@@ -1,10 +1,15 @@
 import {
   Body,
   Controller,
+  FileTypeValidator,
   Get,
+  MaxFileSizeValidator,
   Param,
+  ParseFilePipe,
   ParseUUIDPipe,
   Patch,
+  UploadedFile,
+  UseInterceptors,
 } from '@nestjs/common';
 import { UsersService } from './users.service';
 import { ZodValidationPipe } from 'src/common/pipes/zodValidation.pipe';
@@ -15,6 +20,7 @@ import {
   updateProfileSchema,
 } from './dto/update-profile.dto';
 import { type GetUserInterface } from 'src/common/interfaces/get-user.interface';
+import { FileInterceptor } from '@nestjs/platform-express';
 
 @Controller('users')
 export class UsersController {
@@ -32,14 +38,26 @@ export class UsersController {
   }
 
   @Patch('/update-profile')
+  @UseInterceptors(FileInterceptor('file'))
   async updateProfile(
     @GetUser() payload: GetUserInterface,
     @Body(new ZodValidationPipe(updateProfileSchema))
     updateProfileDto: UpdateProfileDto,
+    @UploadedFile(
+      new ParseFilePipe({
+        validators: [
+          new MaxFileSizeValidator({ maxSize: 1024 * 1024 * 5 }),
+          new FileTypeValidator({ fileType: '.(png|jpeg|jpg|webp)' }),
+        ],
+        fileIsRequired: false,
+      }),
+    )
+    file?: Express.Multer.File,
   ) {
     const profileUpdated = await this.usersService.updateProfile(
       payload.id,
       updateProfileDto,
+      file,
     );
 
     return {

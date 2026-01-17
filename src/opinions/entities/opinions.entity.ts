@@ -21,7 +21,7 @@ export class Opinion {
   content: string;
 
   @Column('varchar', { nullable: true, name: 'image_url' })
-  imageUrl?: string | null;
+  imageUrl: string | null;
 
   @OneToMany(() => Like, (like) => like.opinion)
   likes: Like[];

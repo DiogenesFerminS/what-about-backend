@@ -25,17 +25,17 @@ export class User {
   password: string;
 
   //PROFILE
-  @Column({ nullable: true })
-  name?: string;
+  @Column({ nullable: true, type: 'varchar', length: 16 })
+  name: string | null;
 
   @Column({ nullable: true, length: 160, type: 'varchar' })
-  bio?: string;
+  bio: string | null;
 
-  @Column({ nullable: true })
-  avatarUrl?: string;
+  @Column({ nullable: true, type: 'text' })
+  avatarUrl: string | null;
 
-  @Column({ nullable: true })
-  location?: string;
+  @Column({ nullable: true, type: 'varchar', length: 60 })
+  location: string | null;
 
   @OneToMany(() => Like, (like) => like.user)
   likes: Like[];

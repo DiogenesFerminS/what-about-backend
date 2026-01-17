@@ -2,6 +2,7 @@ import {
   BadRequestException,
   Injectable,
   NotFoundException,
+  UnauthorizedException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { handleError } from 'src/common/helpers/handlerErrors';
@@ -14,6 +15,8 @@ import { type PaginationDto } from 'src/common/dto/pagination.dto';
 import { Like } from 'src/likes/entities/like.entity';
 import { RawOpinion } from './interfaces/raw-opinion';
 import { UsersService } from 'src/users/users.service';
+import { updateOpinionParams } from './interfaces/update-opinion';
+import { getPublicId } from 'src/common/helpers/getPublicId-cloudinary';
 
 @Injectable()
 export class OpinionsService {
@@ -65,7 +68,10 @@ export class OpinionsService {
   }
 
   async findOneById(id: string) {
-    const opinion = await this.opinionRepository.findOneBy({ id });
+    const opinion = await this.opinionRepository.findOne({
+      where: { id },
+      relations: ['user'],
+    });
 
     if (!opinion) {
       throw new NotFoundException({
@@ -171,9 +177,72 @@ export class OpinionsService {
     return opinions;
   }
 
+  async deleteOpinion(id: string, userId: string) {
+    const opinion = await this.findOneById(id);
+
+    if (opinion.user.id !== userId) {
+      throw new UnauthorizedException({
+        ok: false,
+        error: 'You cannot delete opinions that are not your own',
+        message: ResponseMessageType.UNAUTHORIZED,
+      });
+    }
+
+    try {
+      await this.opinionRepository.remove(opinion);
+      return { success: true };
+    } catch {
+      throw new BadRequestException({
+        ok: false,
+        error: 'An error has occurred',
+        message: ResponseMessageType.INTERNAL_SERVER_ERROR,
+      });
+    }
+  }
+
+  async updateOpinion({
+    id,
+    file,
+    updatedOpinionDto,
+    userId,
+  }: updateOpinionParams) {
+    const opinion = await this.findOneById(id);
+
+    if (opinion.user.id !== userId) {
+      throw new UnauthorizedException({
+        ok: false,
+        error: 'You cannot delete opinions that are not your own',
+        message: ResponseMessageType.UNAUTHORIZED,
+      });
+    }
+
+    const imageUrl = await this.manageImage(
+      file,
+      opinion.imageUrl,
+      updatedOpinionDto.deleteImage,
+    );
+
+    const updatedOpinion = this.opinionRepository.merge(opinion, {
+      ...updatedOpinionDto,
+      imageUrl,
+      isEdited: true,
+    });
+
+    try {
+      const savedOpinion = await this.opinionRepository.save(updatedOpinion);
+
+      return savedOpinion;
+    } catch (error) {
+      this.handleError(error);
+    }
+  }
+
   private async uploadImg(file: Express.Multer.File) {
     try {
-      const resp = await this.cloudinaryService.uploadFile(file);
+      const resp = await this.cloudinaryService.uploadFile(
+        file,
+        'what-about-opinions-assets',
+      );
       return resp.secure_url as string;
     } catch (error: unknown) {
       throw new BadRequestException({
@@ -182,5 +251,38 @@ export class OpinionsService {
         error: error instanceof Error ? error.message : 'Upload file failed',
       });
     }
+  }
+
+  private async manageImage(
+    file: Express.Multer.File | undefined,
+    oldUrlImg: string | null,
+    deleteFlag: boolean = false,
+  ) {
+    try {
+      if (file) {
+        const resp = await this.uploadImg(file);
+        await this.deleteCloudinaryImage(oldUrlImg);
+        return resp;
+      }
+
+      if (deleteFlag) {
+        await this.deleteCloudinaryImage(oldUrlImg);
+        return null;
+      }
+
+      return oldUrlImg;
+    } catch (error) {
+      throw new BadRequestException({
+        ok: false,
+        message: ResponseMessageType.BAD_REQUEST,
+        error: error instanceof Error ? error.message : 'Upload file failed',
+      });
+    }
+  }
+
+  private async deleteCloudinaryImage(imageUrl: string | null) {
+    if (!imageUrl) return;
+    const publicId = getPublicId(imageUrl);
+    await this.cloudinaryService.deleteImage(publicId);
   }
 }

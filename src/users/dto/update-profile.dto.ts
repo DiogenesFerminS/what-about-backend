@@ -13,10 +13,13 @@ export const updateProfileSchema = z.object({
         }
       },
     })
-    .min(3, 'The Name is too short')
     .max(16, 'The Name is too long')
     .trim()
-    .optional(),
+    .optional()
+    .transform((val) => {
+      if (val === '') return null;
+      return val;
+    }),
   bio: z
     .string({
       error: (iss) => {
@@ -29,25 +32,13 @@ export const updateProfileSchema = z.object({
         }
       },
     })
-    .min(1, 'The Biography is too short')
     .max(160, 'The Biography is too long')
     .trim()
-    .optional(),
-  avatarUrl: z
-    .string({
-      error: (iss) => {
-        if (iss.input === undefined) {
-          return 'AvatarUrl cannot be empty';
-        }
-
-        if (typeof iss.input === 'string') {
-          return 'AvatarUrl must be a string';
-        }
-      },
-    })
-    .max(1024, 'The avatarUrl is too long')
-    .trim()
-    .optional(),
+    .optional()
+    .transform((val) => {
+      if (val === '') return null;
+      return val;
+    }),
   location: z
     .string({
       error: (iss) => {
@@ -60,10 +51,13 @@ export const updateProfileSchema = z.object({
         }
       },
     })
-    .max(255, 'Location too long')
-    .min(3, 'Location too short')
+    .max(60, 'Location too long')
     .trim()
-    .optional(),
+    .optional()
+    .transform((val) => {
+      if (val === '') return null;
+      return val;
+    }),
 });
 
 export type UpdateProfileDto = z.infer<typeof updateProfileSchema>;

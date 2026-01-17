@@ -15,6 +15,8 @@ import * as bcrypt from 'bcrypt';
 import { ConfigService } from '@nestjs/config';
 import { Envs } from 'src/common/schemas/envs.schema';
 import { UpdateProfileDto } from './dto/update-profile.dto';
+import { CloudinaryService } from 'src/cloudinary/cloudinary.service';
+import { getPublicId } from 'src/common/helpers/getPublicId-cloudinary';
 
 @Injectable()
 export class UsersService {
@@ -22,6 +24,7 @@ export class UsersService {
 
   constructor(
     @InjectRepository(User) private userRepository: Repository<User>,
+    private readonly cloudinaryService: CloudinaryService,
     private configService: ConfigService<Envs>,
   ) {
     this.handleError = handleError;
@@ -102,9 +105,23 @@ export class UsersService {
     return user;
   }
 
-  async updateProfile(id: string, updateProfileDto: UpdateProfileDto) {
+  async updateProfile(
+    id: string,
+    updateProfileDto: UpdateProfileDto,
+    file?: Express.Multer.File,
+  ) {
     const oldUser = await this.findOneById(id);
-    const newUser = this.userRepository.merge(oldUser, updateProfileDto);
+
+    let imageUrl: string | null = oldUser.avatarUrl;
+    const { avatarUrl } = oldUser;
+    if (file) {
+      imageUrl = await this.updateProfileImg(file, avatarUrl);
+    }
+
+    const newUser = this.userRepository.merge(oldUser, {
+      ...updateProfileDto,
+      avatarUrl: imageUrl,
+    });
 
     try {
       await this.userRepository.save(newUser);
@@ -180,5 +197,31 @@ export class UsersService {
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const { password: _, ...rest } = user;
     return rest;
+  }
+
+  private async updateProfileImg(
+    file: Express.Multer.File,
+    oldUrlImg: string | null,
+  ) {
+    try {
+      const resp = await this.cloudinaryService.uploadFile(
+        file,
+        'what-about-profiles-assets',
+      );
+
+      if (oldUrlImg) {
+        const publicId = getPublicId(oldUrlImg);
+
+        await this.cloudinaryService.deleteImage(publicId);
+      }
+
+      return resp.secure_url as string;
+    } catch (error: unknown) {
+      throw new BadRequestException({
+        ok: false,
+        message: ResponseMessageType.BAD_REQUEST,
+        error: error instanceof Error ? error.message : 'Upload file failed',
+      });
+    }
   }
 }

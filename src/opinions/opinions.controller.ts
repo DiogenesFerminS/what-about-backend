@@ -1,14 +1,17 @@
 import {
   Body,
   Controller,
+  Delete,
   FileTypeValidator,
   Get,
   MaxFileSizeValidator,
   Param,
   ParseFilePipe,
   ParseUUIDPipe,
+  Patch,
   Post,
   Query,
+  Res,
   UploadedFile,
   UseInterceptors,
 } from '@nestjs/common';
@@ -21,12 +24,16 @@ import {
 import { GetUser } from 'src/common/decorators/get-user.decorator';
 import { ResponseMessageType } from 'src/common/interfaces/http-response.interface';
 import { FileInterceptor } from '@nestjs/platform-express';
-import { type Express } from 'express';
+import { type Response, type Express } from 'express';
 import {
   type PaginationDto,
   paginationSchema,
 } from 'src/common/dto/pagination.dto';
 import { type GetUserInterface } from 'src/common/interfaces/get-user.interface';
+import {
+  type updatedOpinionDto,
+  updatedOpinionSchema,
+} from './dto/update-opinion.dto';
 
 @Controller('opinions')
 export class OpinionsController {
@@ -35,6 +42,7 @@ export class OpinionsController {
   @Post('create')
   @UseInterceptors(FileInterceptor('file'))
   async createOpinion(
+    @Res({ passthrough: true }) response: Response,
     @GetUser() payload: GetUserInterface,
     @Body(new ZodValidationPipe(createOpinionSchema))
     createOpinionDto: CreateOpinionDto,
@@ -54,6 +62,8 @@ export class OpinionsController {
       createOpinionDto,
       file,
     );
+
+    response.statusCode = 201;
 
     return {
       ok: true,
@@ -75,8 +85,19 @@ export class OpinionsController {
 
     return {
       ok: true,
-      MessageChannel: ResponseMessageType.SUCCESS,
+      message: ResponseMessageType.SUCCESS,
       data,
+    };
+  }
+
+  @Get(':id')
+  async getOneById(@Param('id', ParseUUIDPipe) id: string) {
+    const opinion = await this.opinionsService.findOneById(id);
+
+    return {
+      ok: true,
+      message: ResponseMessageType.SUCCESS,
+      data: opinion,
     };
   }
 
@@ -96,8 +117,54 @@ export class OpinionsController {
 
     return {
       ok: true,
-      MessageChannel: ResponseMessageType.SUCCESS,
+      message: ResponseMessageType.SUCCESS,
       data,
+    };
+  }
+
+  @Delete(':id')
+  async deleteOpinions(
+    @Param('id', ParseUUIDPipe) id: string,
+    @GetUser() payload: GetUserInterface,
+  ) {
+    const resp = await this.opinionsService.deleteOpinion(id, payload.id);
+
+    return {
+      ok: true,
+      message: ResponseMessageType.DELETED,
+      data: resp,
+    };
+  }
+
+  @Patch(':id')
+  @UseInterceptors(FileInterceptor('file'))
+  async updateOpinion(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body(new ZodValidationPipe(updatedOpinionSchema))
+    updatedOpinionDto: updatedOpinionDto,
+    @GetUser() payload: GetUserInterface,
+    @UploadedFile(
+      new ParseFilePipe({
+        validators: [
+          new MaxFileSizeValidator({ maxSize: 1024 * 1024 * 5 }),
+          new FileTypeValidator({ fileType: '.(png|jpeg|jpg|webp)' }),
+        ],
+        fileIsRequired: false,
+      }),
+    )
+    file?: Express.Multer.File,
+  ) {
+    const resp = await this.opinionsService.updateOpinion({
+      id,
+      file,
+      updatedOpinionDto,
+      userId: payload.id,
+    });
+
+    return {
+      ok: true,
+      message: ResponseMessageType.UPDATED,
+      data: resp,
     };
   }
 }
