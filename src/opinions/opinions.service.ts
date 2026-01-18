@@ -17,6 +17,7 @@ import { RawOpinion } from './interfaces/raw-opinion';
 import { UsersService } from 'src/users/users.service';
 import { updateOpinionParams } from './interfaces/update-opinion';
 import { getPublicId } from 'src/common/helpers/getPublicId-cloudinary';
+import { FollowsService } from 'src/follows/follows.service';
 
 @Injectable()
 export class OpinionsService {
@@ -25,6 +26,7 @@ export class OpinionsService {
     @InjectRepository(Opinion) private opinionRepository: Repository<Opinion>,
     private cloudinaryService: CloudinaryService,
     private usersService: UsersService,
+    private followsService: FollowsService,
   ) {}
 
   async createOpinion(
@@ -122,61 +124,6 @@ export class OpinionsService {
     };
   }
 
-  private baseQuery(viewerId: string) {
-    return this.opinionRepository
-      .createQueryBuilder('opinion')
-      .select([
-        'opinion.id',
-        'opinion.content',
-        'opinion.imageUrl',
-        'opinion.createdAt',
-        'opinion.isEdited',
-      ])
-      .leftJoin('opinion.user', 'user')
-      .addSelect([
-        'user.id',
-        'user.username',
-        'user.email',
-        'user.name',
-        'user.avatarUrl',
-      ])
-      .addSelect((sq) => {
-        return sq
-          .select('COUNT(*)')
-          .from(Like, 'likes')
-          .where('likes.opinionId = opinion.id');
-      }, 'likeCount')
-      .addSelect((sq) => {
-        return sq
-          .select('COUNT(l.id)')
-          .from(Like, 'l')
-          .where('l.opinionId = opinion.id')
-          .andWhere('l.userId = :viewerId');
-      }, 'isLiked')
-      .setParameter('viewerId', viewerId)
-      .orderBy('opinion.createdAt', 'DESC')
-      .addOrderBy('opinion.id', 'DESC');
-  }
-
-  private handleParseEntity({
-    entities,
-    rawData,
-  }: {
-    entities: Opinion[];
-    rawData: RawOpinion[];
-  }) {
-    const opinions = entities.map((opinion, index) => {
-      const isLiked = parseInt(rawData[index].isLiked || '0') > 0;
-      return {
-        ...opinion,
-        likesCount: parseInt(rawData[index].likeCount || '0'),
-        isLiked,
-      };
-    });
-
-    return opinions;
-  }
-
   async deleteOpinion(id: string, userId: string) {
     const opinion = await this.findOneById(id);
 
@@ -235,6 +182,91 @@ export class OpinionsService {
     } catch (error) {
       this.handleError(error);
     }
+  }
+
+  async getFollowingOpininions(
+    currentId: string,
+    { limit = 10, page }: PaginationDto,
+  ) {
+    const skip = (page - 1) * limit;
+
+    const ids = await this.followsService.getFollowingIds(currentId);
+    const query = this.baseQuery(currentId)
+      .andWhere('user.id IN (:...ids)')
+      .setParameter('ids', ids);
+
+    const total = await query.clone().getCount();
+
+    const result = query.limit(limit).offset(skip).getRawAndEntities();
+
+    const { entities, raw } = await result;
+
+    const rawData = raw as RawOpinion[];
+    const opinions = this.handleParseEntity({ entities, rawData });
+
+    return {
+      meta: {
+        total: total,
+        limit: limit,
+        page: page,
+      },
+      data: opinions,
+    };
+  }
+
+  private baseQuery(viewerId: string) {
+    return this.opinionRepository
+      .createQueryBuilder('opinion')
+      .select([
+        'opinion.id',
+        'opinion.content',
+        'opinion.imageUrl',
+        'opinion.createdAt',
+        'opinion.isEdited',
+      ])
+      .leftJoin('opinion.user', 'user')
+      .addSelect([
+        'user.id',
+        'user.username',
+        'user.email',
+        'user.name',
+        'user.avatarUrl',
+      ])
+      .addSelect((sq) => {
+        return sq
+          .select('COUNT(*)')
+          .from(Like, 'likes')
+          .where('likes.opinionId = opinion.id');
+      }, 'likeCount')
+      .addSelect((sq) => {
+        return sq
+          .select('COUNT(l.id)')
+          .from(Like, 'l')
+          .where('l.opinionId = opinion.id')
+          .andWhere('l.userId = :viewerId');
+      }, 'isLiked')
+      .setParameter('viewerId', viewerId)
+      .orderBy('opinion.createdAt', 'DESC')
+      .addOrderBy('opinion.id', 'DESC');
+  }
+
+  private handleParseEntity({
+    entities,
+    rawData,
+  }: {
+    entities: Opinion[];
+    rawData: RawOpinion[];
+  }) {
+    const opinions = entities.map((opinion, index) => {
+      const isLiked = parseInt(rawData[index].isLiked || '0') > 0;
+      return {
+        ...opinion,
+        likesCount: parseInt(rawData[index].likeCount || '0'),
+        isLiked,
+      };
+    });
+
+    return opinions;
   }
 
   private async uploadImg(file: Express.Multer.File) {

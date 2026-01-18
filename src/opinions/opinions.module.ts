@@ -5,11 +5,17 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { Opinion } from './entities/opinions.entity';
 import { CloudinaryModule } from 'src/cloudinary/cloudinary.module';
 import { UsersModule } from 'src/users/users.module';
+import { FollowsModule } from 'src/follows/follows.module';
 
 @Module({
   controllers: [OpinionsController],
   providers: [OpinionsService],
-  imports: [CloudinaryModule, TypeOrmModule.forFeature([Opinion]), UsersModule],
+  imports: [
+    CloudinaryModule,
+    TypeOrmModule.forFeature([Opinion]),
+    UsersModule,
+    FollowsModule,
+  ],
   exports: [OpinionsService],
 })
 export class OpinionsModule {}

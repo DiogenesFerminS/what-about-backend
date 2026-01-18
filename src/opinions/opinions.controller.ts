@@ -90,6 +90,24 @@ export class OpinionsController {
     };
   }
 
+  @Get('follow-opinions')
+  async getFollowOpinions(
+    @GetUser() payload: GetUserInterface,
+    @Query(new ZodValidationPipe(paginationSchema))
+    paginationDto: PaginationDto,
+  ) {
+    const resp = await this.opinionsService.getFollowingOpininions(
+      payload.id,
+      paginationDto,
+    );
+
+    return {
+      ok: true,
+      message: ResponseMessageType.SUCCESS,
+      data: resp,
+    };
+  }
+
   @Get(':id')
   async getOneById(@Param('id', ParseUUIDPipe) id: string) {
     const opinion = await this.opinionsService.findOneById(id);

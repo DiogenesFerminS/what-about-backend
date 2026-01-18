@@ -106,4 +106,15 @@ export class FollowsService {
       this.errorHandler(error);
     }
   }
+
+  async getFollowingIds(currentId: string) {
+    const follows = await this.followRepository
+      .createQueryBuilder('follow')
+      .leftJoinAndSelect('follow.following', 'following')
+      .where('follow.follower_id = :currentId', { currentId })
+      .getMany();
+
+    const ids = follows.map((follow) => follow.following.id);
+    return ids;
+  }
 }
