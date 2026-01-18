@@ -10,6 +10,7 @@ import { MailModule } from './mail/mail.module';
 import { OpinionsModule } from './opinions/opinions.module';
 import { CloudinaryModule } from './cloudinary/cloudinary.module';
 import { LikesModule } from './likes/likes.module';
+import { FollowsModule } from './follows/follows.module';
 
 @Module({
   imports: [
@@ -45,6 +46,7 @@ import { LikesModule } from './likes/likes.module';
     OpinionsModule,
     CloudinaryModule,
     LikesModule,
+    FollowsModule,
   ],
   controllers: [],
   providers: [

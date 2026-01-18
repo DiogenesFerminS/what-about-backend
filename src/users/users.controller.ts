@@ -21,6 +21,7 @@ import {
 } from './dto/update-profile.dto';
 import { type GetUserInterface } from 'src/common/interfaces/get-user.interface';
 import { FileInterceptor } from '@nestjs/platform-express';
+import { type Response } from 'express';
 
 @Controller('users')
 export class UsersController {
