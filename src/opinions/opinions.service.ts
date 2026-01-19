@@ -191,6 +191,18 @@ export class OpinionsService {
     const skip = (page - 1) * limit;
 
     const ids = await this.followsService.getFollowingIds(currentId);
+
+    if (ids.length === 0) {
+      return {
+        meta: {
+          limit,
+          page,
+          total: 0,
+        },
+        data: [],
+      };
+    }
+
     const query = this.baseQuery(currentId)
       .andWhere('user.id IN (:...ids)')
       .setParameter('ids', ids);

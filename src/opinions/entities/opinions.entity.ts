@@ -1,3 +1,4 @@
+import { Comment } from 'src/comments/entities/comment.entity';
 import { Like } from 'src/likes/entities/like.entity';
 import { User } from 'src/users/entities/user.entity';
 import {
@@ -25,6 +26,9 @@ export class Opinion {
 
   @OneToMany(() => Like, (like) => like.opinion)
   likes: Like[];
+
+  @OneToMany(() => Comment, (comment) => comment.opinion)
+  comments: Comment[];
 
   @Column('boolean', { default: false, name: 'is_edited' })
   isEdited: boolean;

@@ -1,3 +1,4 @@
+import { Comment } from 'src/comments/entities/comment.entity';
 import { Follow } from 'src/follows/entities/follow.entity';
 import { Like } from 'src/likes/entities/like.entity';
 import { Opinion } from 'src/opinions/entities/opinions.entity';
@@ -46,6 +47,9 @@ export class User {
 
   @OneToMany(() => Follow, (follow) => follow.follower)
   following: Follow[];
+
+  @OneToMany(() => Comment, (comment) => comment.user)
+  comments: Comment[];
 
   // STATE
   @Column({ default: false, name: 'is_verified' })

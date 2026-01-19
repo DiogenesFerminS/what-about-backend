@@ -11,6 +11,7 @@ import { OpinionsModule } from './opinions/opinions.module';
 import { CloudinaryModule } from './cloudinary/cloudinary.module';
 import { LikesModule } from './likes/likes.module';
 import { FollowsModule } from './follows/follows.module';
+import { CommentsModule } from './comments/comments.module';
 
 @Module({
   imports: [
@@ -47,6 +48,7 @@ import { FollowsModule } from './follows/follows.module';
     CloudinaryModule,
     LikesModule,
     FollowsModule,
+    CommentsModule,
   ],
   controllers: [],
   providers: [
