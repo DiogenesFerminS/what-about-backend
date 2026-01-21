@@ -91,4 +91,18 @@ export class CommentsService {
       data: comments,
     };
   }
+
+  async getCommentsCountByOpinionId(
+    opinionId: string,
+  ): Promise<{ count: number }> {
+    await this.opinionsService.findOneById(opinionId);
+
+    const count = await this.commentsRepository
+      .createQueryBuilder('comment')
+      .leftJoin('comment.opinion', 'opinion')
+      .where('opinion.id = :opinionId', { opinionId })
+      .getCount();
+
+    return { count };
+  }
 }

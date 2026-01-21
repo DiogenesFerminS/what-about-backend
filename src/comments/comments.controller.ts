@@ -46,6 +46,20 @@ export class CommentsController {
     };
   }
 
+  @Get('count/opinion/:opinionId')
+  async getCommentsCountByOpinionId(
+    @Param('opinionId', ParseUUIDPipe) opinionId: string,
+  ) {
+    const data =
+      await this.commentsService.getCommentsCountByOpinionId(opinionId);
+
+    return {
+      ok: true,
+      message: ResponseMessageType.SUCCESS,
+      data,
+    };
+  }
+
   @Post()
   async create(
     @Body(new ZodValidationPipe(createCommentSchema))

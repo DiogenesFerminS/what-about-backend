@@ -4,8 +4,6 @@ import { Envs, envs } from './common/schemas/envs.schema';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { UsersModule } from './users/users.module';
 import { AuthModule } from './auth/auth.module';
-import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
-import { APP_GUARD } from '@nestjs/core';
 import { MailModule } from './mail/mail.module';
 import { OpinionsModule } from './opinions/opinions.module';
 import { CloudinaryModule } from './cloudinary/cloudinary.module';
@@ -35,14 +33,6 @@ import { CommentsModule } from './comments/comments.module';
     }),
     UsersModule,
     AuthModule,
-    ThrottlerModule.forRoot({
-      throttlers: [
-        {
-          ttl: 60000,
-          limit: 20,
-        },
-      ],
-    }),
     MailModule,
     OpinionsModule,
     CloudinaryModule,
@@ -51,11 +41,5 @@ import { CommentsModule } from './comments/comments.module';
     CommentsModule,
   ],
   controllers: [],
-  providers: [
-    {
-      provide: APP_GUARD,
-      useClass: ThrottlerGuard,
-    },
-  ],
 })
 export class AppModule {}

@@ -138,7 +138,8 @@ export class OpinionsService {
     try {
       await this.opinionRepository.remove(opinion);
       return { success: true };
-    } catch {
+    } catch (error) {
+      console.log(error);
       throw new BadRequestException({
         ok: false,
         error: 'An error has occurred',
