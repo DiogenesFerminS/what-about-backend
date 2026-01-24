@@ -34,6 +34,7 @@ import {
   type updatedOpinionDto,
   updatedOpinionSchema,
 } from './dto/update-opinion.dto';
+import { type SearchDto, searchSchema } from 'src/common/dto';
 
 @Controller('opinions')
 export class OpinionsController {
@@ -81,6 +82,24 @@ export class OpinionsController {
     const data = await this.opinionsService.getAllOpinions(
       paginationDto,
       payload.id,
+    );
+
+    return {
+      ok: true,
+      message: ResponseMessageType.SUCCESS,
+      data,
+    };
+  }
+
+  @Get('search')
+  async getOpinionsByTerm(
+    @GetUser() payload: GetUserInterface,
+    @Query(new ZodValidationPipe(searchSchema)) query: SearchDto,
+  ) {
+    const data = await this.opinionsService.getOpinionsByTerm(
+      payload.id,
+      query.term,
+      { limit: query.limit, page: query.page },
     );
 
     return {

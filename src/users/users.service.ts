@@ -8,13 +8,12 @@ import {
 import { InjectRepository } from '@nestjs/typeorm';
 import { User } from './entities/user.entity';
 import { Repository } from 'typeorm';
-import { CreateUserDto } from './dto/create-user.dto';
+import { CreateUserDto, UpdateProfileDto } from './dto';
 import { handleError } from 'src/common/helpers/handlerErrors';
 import { ResponseMessageType } from 'src/common/interfaces/http-response.interface';
 import * as bcrypt from 'bcrypt';
 import { ConfigService } from '@nestjs/config';
 import { Envs } from 'src/common/schemas/envs.schema';
-import { UpdateProfileDto } from './dto/update-profile.dto';
 import { CloudinaryService } from 'src/cloudinary/cloudinary.service';
 import { getPublicId } from 'src/common/helpers/getPublicId-cloudinary';
 
@@ -198,6 +197,27 @@ export class UsersService {
     const { password: _, ...rest } = user;
     return rest;
   }
+
+  getUsersByTerm = async (
+    term: string | undefined,
+    { limit, page }: { limit: number; page: number },
+  ) => {
+    const skip = (page - 1) * limit;
+
+    if (!term) {
+      return [];
+    }
+
+    const users = await this.userRepository
+      .createQueryBuilder('users')
+      .where('users.name ILIKE :term', { term: `%${term}%` })
+      .orWhere('users.username ILIKE :term', { term: `%${term}%` })
+      .take(limit)
+      .offset(skip)
+      .getMany();
+
+    return users;
+  };
 
   private async updateProfileImg(
     file: Express.Multer.File,

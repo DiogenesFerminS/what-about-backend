@@ -35,12 +35,13 @@ export class OpinionsService {
     file?: Express.Multer.File,
   ) {
     let imageUrl: null | string = null;
-    const { content } = createOpinionDto;
+    const { content, title } = createOpinionDto;
 
     if (file) {
       imageUrl = await this.uploadImg(file);
     }
     const opinion = this.opinionRepository.create({
+      title,
       content,
       imageUrl: imageUrl,
       user: { id: userId },
@@ -227,12 +228,53 @@ export class OpinionsService {
     };
   }
 
+  getOpinionsByTerm = async (
+    currentId: string,
+    term: string | undefined,
+    { limit, page }: PaginationDto,
+  ) => {
+    const skip = (page - 1) * limit;
+
+    if (!term) {
+      return {
+        meta: {
+          total: 0,
+          page: page,
+          limit: limit,
+        },
+        data: [],
+      };
+    }
+
+    const query = this.baseQuery(currentId)
+      .andWhere('opinion.content ILIKE :term')
+      .setParameter('term', `%${term}%`);
+
+    const total = await query.clone().getCount();
+
+    const result = query.limit(limit).offset(skip).getRawAndEntities();
+
+    const { entities, raw } = await result;
+    const rawData = raw as RawOpinion[];
+    const opinions = this.handleParseEntity({ entities, rawData });
+
+    return {
+      meta: {
+        total,
+        limit,
+        page,
+      },
+      data: opinions,
+    };
+  };
+
   private baseQuery(viewerId: string) {
     return this.opinionRepository
       .createQueryBuilder('opinion')
       .select([
         'opinion.id',
         'opinion.content',
+        'opinion.title',
         'opinion.imageUrl',
         'opinion.createdAt',
         'opinion.isEdited',

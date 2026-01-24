@@ -18,7 +18,10 @@ export class Opinion {
   @PrimaryGeneratedColumn('uuid', { name: 'opinion_id' })
   id: string;
 
-  @Column({ type: 'varchar', length: 500 })
+  @Column({ type: 'varchar', length: 100 })
+  title: string;
+
+  @Column({ type: 'varchar', length: 2700 })
   content: string;
 
   @Column('varchar', { nullable: true, name: 'image_url' })

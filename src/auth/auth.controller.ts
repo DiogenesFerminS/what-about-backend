@@ -11,10 +11,7 @@ import { AuthService } from './auth.service';
 import { ZodValidationPipe } from 'src/common/pipes/zodValidation.pipe';
 import { type LoginDto, loginSchema } from './dto/login.dto';
 import { Public } from 'src/common/decorators/public.decorator';
-import {
-  type CreateUserDto,
-  createUserSchema,
-} from 'src/users/dto/create-user.dto';
+import { type CreateUserDto, createUserSchema } from 'src/users/dto';
 import { ResponseMessageType } from 'src/common/interfaces/http-response.interface';
 import { type Response } from 'express';
 import { type ResendEmailDto, resendEmailSchema } from './dto/resend-email.dto';

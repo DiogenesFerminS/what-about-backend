@@ -14,10 +14,26 @@ export const updatedOpinionSchema = z.object({
       },
     })
     .min(3, 'content is too short')
-    .max(500, 'content is too long')
+    .max(2700, 'content is too long')
     .trim()
     .optional(),
 
+  title: z
+    .string({
+      error: (iss) => {
+        if (iss.input === undefined) {
+          return "title content can't be empty";
+        }
+
+        if (typeof iss.input !== 'string') {
+          return 'title must be a string';
+        }
+      },
+    })
+    .min(3, 'title must have 3 characters at least')
+    .max(100, 'title must have maximum 100 characters')
+    .trim()
+    .optional(),
   deleteImage: z.preprocess((val) => {
     if (typeof val === 'string') {
       return val === 'true';

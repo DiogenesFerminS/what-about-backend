@@ -8,6 +8,7 @@ import {
   ParseFilePipe,
   ParseUUIDPipe,
   Patch,
+  Query,
   UploadedFile,
   UseInterceptors,
 } from '@nestjs/common';
@@ -15,13 +16,11 @@ import { UsersService } from './users.service';
 import { ZodValidationPipe } from 'src/common/pipes/zodValidation.pipe';
 import { ResponseMessageType } from 'src/common/interfaces/http-response.interface';
 import { GetUser } from 'src/common/decorators/get-user.decorator';
-import {
-  type UpdateProfileDto,
-  updateProfileSchema,
-} from './dto/update-profile.dto';
+import { type UpdateProfileDto, updateProfileSchema } from './dto';
 import { type GetUserInterface } from 'src/common/interfaces/get-user.interface';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { type Response } from 'express';
+import { type SearchDto, searchSchema } from 'src/common/dto';
 
 @Controller('users')
 export class UsersController {
@@ -65,6 +64,22 @@ export class UsersController {
       ok: true,
       message: ResponseMessageType.UPDATED,
       data: profileUpdated,
+    };
+  }
+
+  @Get('/get')
+  async getUsersByTerm(
+    @Query(new ZodValidationPipe(searchSchema)) query: SearchDto,
+  ) {
+    const data = await this.usersService.getUsersByTerm(query.term, {
+      limit: query.limit,
+      page: query.page,
+    });
+
+    return {
+      ok: true,
+      message: ResponseMessageType.SUCCESS,
+      data,
     };
   }
 
