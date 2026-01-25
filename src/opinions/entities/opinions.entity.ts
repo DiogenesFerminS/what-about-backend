@@ -11,6 +11,7 @@ import {
   Index,
   DeleteDateColumn,
   OneToMany,
+  JoinColumn,
 } from 'typeorm';
 
 @Entity()
@@ -32,6 +33,16 @@ export class Opinion {
 
   @OneToMany(() => Comment, (comment) => comment.opinion)
   comments: Comment[];
+
+  @ManyToOne(() => Opinion, (opinion) => opinion.reposts, {
+    nullable: true,
+    onDelete: 'CASCADE',
+  })
+  @JoinColumn({ name: 'original_opinion_id' })
+  originalOpinion: Opinion;
+
+  @OneToMany(() => Opinion, (opinion) => opinion.originalOpinion)
+  reposts: Opinion[];
 
   @Column('boolean', { default: false, name: 'is_edited' })
   isEdited: boolean;

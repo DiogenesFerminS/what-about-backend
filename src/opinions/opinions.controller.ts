@@ -35,6 +35,7 @@ import {
   updatedOpinionSchema,
 } from './dto/update-opinion.dto';
 import { type SearchDto, searchSchema } from 'src/common/dto';
+import { type RepostDto, repostSchema } from './dto/repost-opinion';
 
 @Controller('opinions')
 export class OpinionsController {
@@ -70,6 +71,23 @@ export class OpinionsController {
       ok: true,
       message: ResponseMessageType.SUCCESS,
       data: newOpinion,
+    };
+  }
+
+  @Post('repost')
+  async repostOpinion(
+    @Body(new ZodValidationPipe(repostSchema)) repostDto: RepostDto,
+    @GetUser() payload: GetUserInterface,
+  ) {
+    const data = await this.opinionsService.repostOpinion(
+      repostDto,
+      payload.id,
+    );
+
+    return {
+      ok: true,
+      message: ResponseMessageType.SUCCESS,
+      data: data,
     };
   }
 
@@ -124,6 +142,23 @@ export class OpinionsController {
       ok: true,
       message: ResponseMessageType.SUCCESS,
       data: resp,
+    };
+  }
+
+  @Get('/get/:id')
+  async getAllByOneOpinion(
+    @Param('id', ParseUUIDPipe) id: string,
+    @GetUser() payload: GetUserInterface,
+  ) {
+    const opinion = await this.opinionsService.getAllByOneOpinion(
+      id,
+      payload.id,
+    );
+
+    return {
+      ok: true,
+      message: ResponseMessageType.SUCCESS,
+      data: opinion,
     };
   }
 

@@ -7,7 +7,7 @@ import {
 import { InjectRepository } from '@nestjs/typeorm';
 import { handleError } from 'src/common/helpers/handlerErrors';
 import { Opinion } from './entities/opinions.entity';
-import { Repository } from 'typeorm';
+import { Brackets, Repository } from 'typeorm';
 import { CreateOpinionDto } from './dto/create-opinion.dto';
 import { CloudinaryService } from 'src/cloudinary/cloudinary.service';
 import { ResponseMessageType } from 'src/common/interfaces/http-response.interface';
@@ -18,6 +18,7 @@ import { UsersService } from 'src/users/users.service';
 import { updateOpinionParams } from './interfaces/update-opinion';
 import { getPublicId } from 'src/common/helpers/getPublicId-cloudinary';
 import { FollowsService } from 'src/follows/follows.service';
+import { RepostDto } from './dto/repost-opinion';
 
 @Injectable()
 export class OpinionsService {
@@ -48,6 +49,23 @@ export class OpinionsService {
     });
 
     return await this.opinionRepository.save(opinion);
+  }
+
+  async repostOpinion({ content, repostId, title }: RepostDto, userId: string) {
+    const originalOpinion = await this.findOneById(repostId);
+    const repost = this.opinionRepository.create({
+      originalOpinion: originalOpinion,
+      content: content,
+      title: title,
+      user: { id: userId },
+    });
+
+    try {
+      const savedRepost = await this.opinionRepository.save(repost);
+      return savedRepost;
+    } catch (error) {
+      this.handleError(error);
+    }
   }
 
   async getAllOpinions({ limit, page }: PaginationDto, userId: string) {
@@ -85,6 +103,27 @@ export class OpinionsService {
     }
 
     return opinion;
+  }
+
+  async getAllByOneOpinion(id: string, currentId: string) {
+    const result = await this.baseQuery(currentId)
+      .andWhere('opinion.id = :id')
+      .setParameter('id', id)
+      .getRawAndEntities();
+
+    const { entities, raw } = result;
+    if (!entities || entities.length < 0) {
+      throw new BadRequestException({
+        ok: false,
+        message: ResponseMessageType.BAD_REQUEST,
+        error: 'Opinion not found',
+      });
+    }
+    const rawData = raw as RawOpinion[];
+
+    const opinions = this.handleParseEntity({ entities, rawData });
+
+    return opinions[0];
   }
 
   async getAllByUserId({
@@ -246,9 +285,14 @@ export class OpinionsService {
       };
     }
 
-    const query = this.baseQuery(currentId)
-      .andWhere('opinion.content ILIKE :term')
-      .setParameter('term', `%${term}%`);
+    const query = this.baseQuery(currentId).andWhere(
+      new Brackets((qb) => {
+        qb.where('opinion.content ILIKE :term', { term: `%${term}%` }).orWhere(
+          'opinion.title ILIKE :term',
+          { term: `%${term}%` },
+        );
+      }),
+    );
 
     const total = await query.clone().getCount();
 
@@ -279,6 +323,7 @@ export class OpinionsService {
         'opinion.createdAt',
         'opinion.isEdited',
       ])
+      .leftJoinAndSelect('opinion.originalOpinion', 'originalOp')
       .leftJoin('opinion.user', 'user')
       .addSelect([
         'user.id',
