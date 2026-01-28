@@ -74,12 +74,14 @@ export class OpinionsController {
     };
   }
 
-  @Post('repost')
+  @Post('repost/:id')
   async repostOpinion(
+    @Param('id', ParseUUIDPipe) id: string,
     @Body(new ZodValidationPipe(repostSchema)) repostDto: RepostDto,
     @GetUser() payload: GetUserInterface,
   ) {
     const data = await this.opinionsService.repostOpinion(
+      id,
       repostDto,
       payload.id,
     );
@@ -88,6 +90,34 @@ export class OpinionsController {
       ok: true,
       message: ResponseMessageType.SUCCESS,
       data: data,
+    };
+  }
+
+  @Delete('repost/:id')
+  async deleteRepost(
+    @Param('id', ParseUUIDPipe) id: string,
+    @GetUser() payload: GetUserInterface,
+  ) {
+    const response = await this.opinionsService.deleteRepost(id, payload.id);
+
+    return {
+      ok: true,
+      message: ResponseMessageType.SUCCESS,
+      response,
+    };
+  }
+
+  @Get('repost/stats/:id')
+  async getRepostStats(
+    @Param('id', ParseUUIDPipe) id: string,
+    @GetUser() payload: GetUserInterface,
+  ) {
+    const data = await this.opinionsService.getRepostStats(id, payload.id);
+
+    return {
+      ok: true,
+      message: ResponseMessageType.SUCCESS,
+      data,
     };
   }
 

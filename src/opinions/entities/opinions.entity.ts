@@ -39,6 +39,7 @@ export class Opinion {
     onDelete: 'CASCADE',
   })
   @JoinColumn({ name: 'original_opinion_id' })
+  @Index()
   originalOpinion: Opinion;
 
   @OneToMany(() => Opinion, (opinion) => opinion.originalOpinion)

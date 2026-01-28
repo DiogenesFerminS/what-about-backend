@@ -11,4 +11,6 @@ export interface RawOpinion {
   user_avatarUrl: string;
   likeCount: string;
   isLiked: string;
+  isRepostedByMe: string;
+  repostCount: string;
 }

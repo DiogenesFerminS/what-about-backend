@@ -13,7 +13,7 @@ import { CloudinaryService } from 'src/cloudinary/cloudinary.service';
 import { ResponseMessageType } from 'src/common/interfaces/http-response.interface';
 import { type PaginationDto } from 'src/common/dto/pagination.dto';
 import { Like } from 'src/likes/entities/like.entity';
-import { RawOpinion } from './interfaces/raw-opinion';
+import { type RawOpinion } from './interfaces/raw-opinion';
 import { UsersService } from 'src/users/users.service';
 import { updateOpinionParams } from './interfaces/update-opinion';
 import { getPublicId } from 'src/common/helpers/getPublicId-cloudinary';
@@ -51,10 +51,19 @@ export class OpinionsService {
     return await this.opinionRepository.save(opinion);
   }
 
-  async repostOpinion({ content, repostId, title }: RepostDto, userId: string) {
-    const originalOpinion = await this.findOneById(repostId);
+  async repostOpinion(
+    opinionId: string,
+    { content, title }: RepostDto,
+    userId: string,
+  ) {
+    const originalOpinion = await this.findOneById(opinionId);
+
+    const itsRepost = !!originalOpinion.originalOpinion;
+
     const repost = this.opinionRepository.create({
-      originalOpinion: originalOpinion,
+      originalOpinion: itsRepost
+        ? originalOpinion.originalOpinion
+        : originalOpinion,
       content: content,
       title: title,
       user: { id: userId },
@@ -66,6 +75,54 @@ export class OpinionsService {
     } catch (error) {
       this.handleError(error);
     }
+  }
+
+  async deleteRepost(opinionId: string, userId: string) {
+    const existRepost = await this.opinionRepository.findOne({
+      where: {
+        originalOpinion: { id: opinionId },
+        user: { id: userId },
+      },
+    });
+
+    if (!existRepost) {
+      throw new NotFoundException({
+        ok: false,
+        message: ResponseMessageType.BAD_REQUEST,
+        error: 'Opinion not found',
+      });
+    }
+
+    try {
+      await this.opinionRepository.remove(existRepost);
+      return {
+        success: true,
+      };
+    } catch (error) {
+      this.handleError(error);
+    }
+  }
+
+  async getRepostStats(opinionId: string, currentId: string) {
+    const [total, myRepost] = await Promise.all([
+      this.opinionRepository.count({
+        relations: ['originalOpinion'],
+        where: { originalOpinion: { id: opinionId } },
+      }),
+
+      this.opinionRepository.count({
+        relations: ['originalOpinion'],
+        where: {
+          originalOpinion: { id: opinionId },
+          user: { id: currentId },
+        },
+      }),
+    ]);
+
+    return {
+      total,
+      myRepost: myRepost > 0,
+    };
   }
 
   async getAllOpinions({ limit, page }: PaginationDto, userId: string) {
@@ -91,7 +148,7 @@ export class OpinionsService {
   async findOneById(id: string) {
     const opinion = await this.opinionRepository.findOne({
       where: { id },
-      relations: ['user'],
+      relations: ['user', 'originalOpinion'],
     });
 
     if (!opinion) {
@@ -324,6 +381,12 @@ export class OpinionsService {
         'opinion.isEdited',
       ])
       .leftJoinAndSelect('opinion.originalOpinion', 'originalOp')
+      .leftJoin('originalOp.user', 'originalUser')
+      .addSelect([
+        'originalUser.id',
+        'originalUser.username',
+        'originalUser.avatarUrl',
+      ])
       .leftJoin('opinion.user', 'user')
       .addSelect([
         'user.id',
@@ -345,6 +408,23 @@ export class OpinionsService {
           .where('l.opinionId = opinion.id')
           .andWhere('l.userId = :viewerId');
       }, 'isLiked')
+      .addSelect((sq) => {
+        return sq
+          .select('COUNT(my_repost.id)')
+          .from(Opinion, 'my_repost')
+          .where('my_repost.user.id = :viewerId')
+          .andWhere(
+            'my_repost.originalOpinion.id = COALESCE(originalOp.id, opinion.id)',
+          );
+      }, 'isRepostedByMe')
+      .addSelect((sq) => {
+        return sq
+          .select('COUNT(reposts.id)')
+          .from(Opinion, 'reposts')
+          .where(
+            'reposts.originalOpinion.id = COALESCE(originalOp.id, opinion.id)',
+          );
+      }, 'repostCount')
       .setParameter('viewerId', viewerId)
       .orderBy('opinion.createdAt', 'DESC')
       .addOrderBy('opinion.id', 'DESC');
@@ -359,10 +439,14 @@ export class OpinionsService {
   }) {
     const opinions = entities.map((opinion, index) => {
       const isLiked = parseInt(rawData[index].isLiked || '0') > 0;
+      const isRepostedByMe = parseInt(rawData[index].isRepostedByMe || '0') > 0;
+      const repostCount = parseInt(rawData[index].repostCount || '0');
       return {
         ...opinion,
         likesCount: parseInt(rawData[index].likeCount || '0'),
         isLiked,
+        isRepostedByMe: isRepostedByMe,
+        repostCount: repostCount,
       };
     });
 
