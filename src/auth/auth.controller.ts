@@ -2,6 +2,7 @@ import {
   Body,
   Controller,
   Get,
+  Headers,
   Param,
   Post,
   Res,
@@ -31,6 +32,7 @@ export class AuthController {
   async login(
     @Res({ passthrough: true }) res: Response,
     @Body() loginDto: LoginDto,
+    @Headers('x-client-type') clientType: string,
   ) {
     const token = await this.authService.login(loginDto);
 
@@ -42,10 +44,20 @@ export class AuthController {
       path: '/',
     });
 
-    return {
+    const response: {
+      ok: boolean;
+      message: ResponseMessageType;
+      data?: { token: string };
+    } = {
       ok: true,
       message: ResponseMessageType.SUCCESS,
     };
+
+    if (clientType === 'server-action') {
+      response.data = { token };
+    }
+
+    return response;
   }
 
   @Get('logout')

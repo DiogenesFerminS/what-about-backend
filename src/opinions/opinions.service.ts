@@ -19,6 +19,9 @@ import { updateOpinionParams } from './interfaces/update-opinion';
 import { getPublicId } from 'src/common/helpers/getPublicId-cloudinary';
 import { FollowsService } from 'src/follows/follows.service';
 import { RepostDto } from './dto/repost-opinion';
+import { extractTags } from 'src/common/helpers/extractTags';
+import { TagsService } from 'src/tags/tags.service';
+import { Tag } from 'src/tags/entities/tag.entity';
 
 @Injectable()
 export class OpinionsService {
@@ -28,6 +31,7 @@ export class OpinionsService {
     private cloudinaryService: CloudinaryService,
     private usersService: UsersService,
     private followsService: FollowsService,
+    private tagsService: TagsService,
   ) {}
 
   async createOpinion(
@@ -48,7 +52,29 @@ export class OpinionsService {
       user: { id: userId },
     });
 
-    return await this.opinionRepository.save(opinion);
+    const tagNames = extractTags(content);
+
+    if (tagNames.length > 0) {
+      const existingTags = await this.tagsService.getExistingTags(tagNames);
+      const existingTagsName = existingTags.map((existTag) => existTag.name);
+
+      const newTags = tagNames.filter((tag) => !existingTagsName.includes(tag));
+      let newTagsEntities: Tag[] = [];
+
+      if (newTags.length > 0) {
+        newTagsEntities = this.tagsService.createMany(newTags);
+        await this.tagsService.saveMany(newTagsEntities);
+      }
+
+      const allTags = [...existingTags, ...newTagsEntities];
+
+      opinion.tags = allTags;
+
+      const tagsId = allTags.map((t) => t.id);
+      await this.tagsService.incrementTags(tagsId);
+    }
+
+    return this.opinionRepository.save(opinion);
   }
 
   async repostOpinion(

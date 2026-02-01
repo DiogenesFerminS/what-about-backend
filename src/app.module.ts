@@ -10,6 +10,7 @@ import { CloudinaryModule } from './cloudinary/cloudinary.module';
 import { LikesModule } from './likes/likes.module';
 import { FollowsModule } from './follows/follows.module';
 import { CommentsModule } from './comments/comments.module';
+import { TagsModule } from './tags/tags.module';
 
 @Module({
   imports: [
@@ -39,6 +40,7 @@ import { CommentsModule } from './comments/comments.module';
     LikesModule,
     FollowsModule,
     CommentsModule,
+    TagsModule,
   ],
   controllers: [],
 })

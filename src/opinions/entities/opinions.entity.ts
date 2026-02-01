@@ -1,5 +1,6 @@
 import { Comment } from 'src/comments/entities/comment.entity';
 import { Like } from 'src/likes/entities/like.entity';
+import { Tag } from 'src/tags/entities/tag.entity';
 import { User } from 'src/users/entities/user.entity';
 import {
   Column,
@@ -12,6 +13,8 @@ import {
   DeleteDateColumn,
   OneToMany,
   JoinColumn,
+  ManyToMany,
+  JoinTable,
 } from 'typeorm';
 
 @Entity()
@@ -54,6 +57,20 @@ export class Opinion {
   @CreateDateColumn({ name: 'created_at', type: 'timestamptz' })
   @Index()
   createdAt: Date;
+
+  @ManyToMany(() => Tag, (tag) => tag.opinion)
+  @JoinTable({
+    name: 'opinion_tags',
+    joinColumn: {
+      name: 'opinion_id',
+      referencedColumnName: 'id',
+    },
+    inverseJoinColumn: {
+      name: 'tag_id',
+      referencedColumnName: 'id',
+    },
+  })
+  tags: Tag[];
 
   @UpdateDateColumn({ name: 'updated_at' })
   updatedAt: Date;

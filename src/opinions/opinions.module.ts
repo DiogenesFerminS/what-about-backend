@@ -6,6 +6,7 @@ import { Opinion } from './entities/opinions.entity';
 import { CloudinaryModule } from 'src/cloudinary/cloudinary.module';
 import { UsersModule } from 'src/users/users.module';
 import { FollowsModule } from 'src/follows/follows.module';
+import { TagsModule } from 'src/tags/tags.module';
 
 @Module({
   controllers: [OpinionsController],
@@ -15,6 +16,7 @@ import { FollowsModule } from 'src/follows/follows.module';
     TypeOrmModule.forFeature([Opinion]),
     UsersModule,
     FollowsModule,
+    TagsModule,
   ],
   exports: [OpinionsService],
 })
