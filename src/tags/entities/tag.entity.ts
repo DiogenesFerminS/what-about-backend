@@ -12,6 +12,6 @@ export class Tag {
   @Column({ type: 'int', default: 0 })
   count: number;
 
-  @ManyToMany(() => Opinion, (opinion) => opinion.tags, { onDelete: 'CASCADE' })
+  @ManyToMany(() => Opinion, (opinion) => opinion.tags)
   opinion: Opinion[];
 }

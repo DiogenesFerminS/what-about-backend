@@ -58,7 +58,7 @@ export class Opinion {
   @Index()
   createdAt: Date;
 
-  @ManyToMany(() => Tag, (tag) => tag.opinion)
+  @ManyToMany(() => Tag, (tag) => tag.opinion, { onDelete: 'CASCADE' })
   @JoinTable({
     name: 'opinion_tags',
     joinColumn: {

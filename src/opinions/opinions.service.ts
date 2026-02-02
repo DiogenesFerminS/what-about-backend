@@ -95,6 +95,29 @@ export class OpinionsService {
       user: { id: userId },
     });
 
+    const tagsNames = extractTags(content);
+
+    if (tagsNames.length > 0) {
+      const existingTags = await this.tagsService.getExistingTags(tagsNames);
+      const existingTagsName = existingTags.map((tag) => tag.name);
+
+      const newTags = tagsNames.filter(
+        (tag) => !existingTagsName.includes(tag),
+      );
+
+      let newTagsEntities: Tag[] = [];
+      if (newTags.length > 0) {
+        newTagsEntities = this.tagsService.createMany(newTags);
+        await this.tagsService.saveMany(newTagsEntities);
+      }
+
+      const allTags = [...existingTags, ...newTagsEntities];
+      repost.tags = allTags;
+
+      const allTagsIds = allTags.map((t) => t.id);
+      await this.tagsService.incrementTags(allTagsIds);
+    }
+
     try {
       const savedRepost = await this.opinionRepository.save(repost);
       return savedRepost;
@@ -109,6 +132,7 @@ export class OpinionsService {
         originalOpinion: { id: opinionId },
         user: { id: userId },
       },
+      relations: ['tags'],
     });
 
     if (!existRepost) {
@@ -117,6 +141,11 @@ export class OpinionsService {
         message: ResponseMessageType.BAD_REQUEST,
         error: 'Opinion not found',
       });
+    }
+
+    if (existRepost.tags.length > 0) {
+      const tagsIds = existRepost.tags.map((t) => t.id);
+      await this.tagsService.decrementTags(tagsIds);
     }
 
     try {
@@ -174,7 +203,7 @@ export class OpinionsService {
   async findOneById(id: string) {
     const opinion = await this.opinionRepository.findOne({
       where: { id },
-      relations: ['user', 'originalOpinion'],
+      relations: ['user', 'originalOpinion', 'tags'],
     });
 
     if (!opinion) {
@@ -259,6 +288,11 @@ export class OpinionsService {
     }
 
     try {
+      if (opinion.tags.length > 0) {
+        const tagsIds = opinion.tags.map((tag) => tag.id);
+        await this.tagsService.decrementTags(tagsIds);
+      }
+
       await this.opinionRepository.remove(opinion);
       return { success: true };
     } catch (error) {
@@ -298,6 +332,33 @@ export class OpinionsService {
       imageUrl,
       isEdited: true,
     });
+
+    if (opinion.tags.length > 0) {
+      const oldTagsId = opinion.tags.map((t) => t.id);
+      await this.tagsService.decrementTags(oldTagsId);
+    }
+
+    if (updatedOpinionDto.content) {
+      const tagsNames = extractTags(updatedOpinionDto.content);
+      if (tagsNames.length > 0) {
+        const existingTags = await this.tagsService.getExistingTags(tagsNames);
+        const existingTagsNames = existingTags.map((e) => e.name);
+
+        const newTags = tagsNames.filter((t) => !existingTagsNames.includes(t));
+
+        let newTagsEntities: Tag[] = [];
+        if (newTags.length > 0) {
+          newTagsEntities = this.tagsService.createMany(newTags);
+          await this.tagsService.saveMany(newTagsEntities);
+        }
+
+        const allTags = [...existingTags, ...newTagsEntities];
+        const allTagsId = allTags.map((t) => t.id);
+        await this.tagsService.incrementTags(allTagsId);
+
+        updatedOpinion.tags = allTags;
+      }
+    }
 
     try {
       const savedOpinion = await this.opinionRepository.save(updatedOpinion);
@@ -345,6 +406,36 @@ export class OpinionsService {
         total: total,
         limit: limit,
         page: page,
+      },
+      data: opinions,
+    };
+  }
+
+  async getOpinionsByTagName(
+    tagName: string,
+    currentId: string,
+    { limit, page }: PaginationDto,
+  ) {
+    const skip = (page - 1) * limit;
+
+    const query = this.baseQuery(currentId)
+      .innerJoin('opinion.tags', 'filterTag', 'filterTag.name = :tag')
+      .setParameter('tag', tagName);
+
+    const total = await query.clone().getCount();
+
+    const result = await query.limit(limit).offset(skip).getRawAndEntities();
+
+    const { entities, raw } = result;
+    const rawData = raw as RawOpinion[];
+
+    const opinions = this.handleParseEntity({ entities, rawData });
+
+    return {
+      meta: {
+        total,
+        limit,
+        page,
       },
       data: opinions,
     };
@@ -421,6 +512,8 @@ export class OpinionsService {
         'user.name',
         'user.avatarUrl',
       ])
+      .leftJoin('opinion.tags', 'tags')
+      .addSelect(['tags.name', 'tags.id', 'tags.count'])
       .addSelect((sq) => {
         return sq
           .select('COUNT(*)')

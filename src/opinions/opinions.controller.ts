@@ -157,6 +157,26 @@ export class OpinionsController {
     };
   }
 
+  @Get('tag/:tag')
+  async getOpinionsByTagName(
+    @Param('tag') tag: string,
+    @GetUser() payload: GetUserInterface,
+    @Query(new ZodValidationPipe(paginationSchema))
+    paginationDto: PaginationDto,
+  ) {
+    const data = await this.opinionsService.getOpinionsByTagName(
+      tag,
+      payload.id,
+      paginationDto,
+    );
+
+    return {
+      ok: true,
+      message: ResponseMessageType.SUCCESS,
+      data: data,
+    };
+  }
+
   @Get('follow-opinions')
   async getFollowOpinions(
     @GetUser() payload: GetUserInterface,
