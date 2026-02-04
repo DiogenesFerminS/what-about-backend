@@ -16,7 +16,8 @@ export const SEED_USERS = [
     password: 'Choco2712*',
     name: 'Diogenes',
     bio: "I'm the creator",
-    avatarUrl: null,
+    avatarUrl:
+      'https://res.cloudinary.com/dqclkzb8r/image/upload/v1770097939/what-about-profiles-assets/c5mskgmixmsb87f7ijeu.jpg',
     location: 'Maturin, VE',
     isVerified: true,
     isActive: true,
@@ -62,7 +63,7 @@ export const SEED_USERS = [
     bio: 'I broke the rules.',
     avatarUrl: null,
     location: 'Dark Cave',
-    isVerified: false,
-    isActive: false,
+    isVerified: true,
+    isActive: true,
   },
 ];
