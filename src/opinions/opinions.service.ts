@@ -7,7 +7,7 @@ import {
 import { InjectRepository } from '@nestjs/typeorm';
 import { handleError } from 'src/common/helpers/handlerErrors';
 import { Opinion } from './entities/opinions.entity';
-import { Brackets, Repository } from 'typeorm';
+import { Repository } from 'typeorm';
 import { CreateOpinionDto } from './dto/create-opinion.dto';
 import { CloudinaryService } from 'src/cloudinary/cloudinary.service';
 import { ResponseMessageType } from 'src/common/interfaces/http-response.interface';
@@ -459,14 +459,23 @@ export class OpinionsService {
       };
     }
 
-    const query = this.baseQuery(currentId).andWhere(
-      new Brackets((qb) => {
-        qb.where('opinion.content ILIKE :term', { term: `%${term}%` }).orWhere(
-          'opinion.title ILIKE :term',
-          { term: `%${term}%` },
-        );
-      }),
-    );
+    const formattedTerm = term
+      .trim()
+      .replace(/\s+/g, ' ')
+      .split(' ')
+      .map((word) => `${word}:*`)
+      .join(' & ');
+
+    const query = this.baseQuery(currentId)
+      .andWhere(
+        "opinion.searchVector @@ to_tsquery('spanish', unaccent(:term))",
+        { term: formattedTerm },
+      )
+      .addSelect(
+        "ts_rank(opinion.searchVector, to_tsquery('spanish', unaccent(:term)))",
+        'rank',
+      )
+      .orderBy('rank', 'DESC');
 
     const total = await query.clone().getCount();
 

@@ -10,8 +10,34 @@ import * as bcrypt from 'bcrypt';
 import { OPINION_TEMPLATES } from './data/seed_opinions';
 import { Comment } from 'src/comments/entities/comment.entity';
 import { extractTags } from 'src/common/helpers/extractTags';
+import { Logger } from '@nestjs/common';
 
 dotenv.config();
+const logger = new Logger('SEED');
+
+const setupFullTextSearch = async (dataSource: DataSource) => {
+  logger.log('Configuring Search Engine (Triggers & Extensions)...');
+
+  await dataSource.query(`CREATE EXTENSION IF NOT EXISTS unaccent`);
+
+  await dataSource.query(`
+    CREATE OR REPLACE FUNCTION opinion_tsvector_trigger() RETURNS trigger AS $$
+    BEGIN
+      new."searchVector" := to_tsvector('spanish', unaccent(coalesce(new.title, '') || ' ' || coalesce(new.content, '')));
+      RETURN new;
+    END
+    $$ LANGUAGE plpgsql;
+  `);
+
+  await dataSource.query(`DROP TRIGGER IF EXISTS tsvectorupdate ON "opinion"`);
+
+  await dataSource.query(`
+    CREATE TRIGGER tsvectorupdate BEFORE INSERT OR UPDATE
+    ON "opinion" FOR EACH ROW EXECUTE PROCEDURE opinion_tsvector_trigger();
+  `);
+
+  logger.log('Search engine configured correctly.');
+};
 
 const getTags = async (content: string, tagsRepository: Repository<Tag>) => {
   const tagsNames = extractTags(content);
@@ -52,7 +78,9 @@ const runSeed = async () => {
   });
 
   await AppDataSource.initialize();
+  await setupFullTextSearch(AppDataSource);
 
+  logger.log('SEED INITIALIZED...');
   const usersRepository = AppDataSource.getRepository(User);
   const opinionsRepository = AppDataSource.getRepository(Opinion);
   const tagsRepository = AppDataSource.getRepository(Tag);
@@ -94,8 +122,8 @@ const runSeed = async () => {
 
   await opinionsRepository.save(entitiesOpinions);
 
-  console.log('Conectado');
+  logger.log('SEED COMPLETED');
   await AppDataSource.destroy();
 };
 
-runSeed().catch((err) => console.error(err));
+runSeed().catch((err) => logger.error(err));

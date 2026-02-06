@@ -6,6 +6,17 @@ import { ResponseMessageType } from 'src/common/interfaces/http-response.interfa
 export class TagsController {
   constructor(private readonly tagsService: TagsService) {}
 
+  @Get('/trending')
+  async getTrendingTags() {
+    const data = await this.tagsService.getTrendingTags();
+
+    return {
+      ok: true,
+      message: ResponseMessageType.SUCCESS,
+      data,
+    };
+  }
+
   @Get(':name')
   async getCountByName(@Param('name') name: string) {
     const count = await this.tagsService.getCountByName(name);

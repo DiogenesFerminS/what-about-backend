@@ -58,6 +58,10 @@ export class Opinion {
   @Index()
   createdAt: Date;
 
+  @Column({ type: 'tsvector', select: false, nullable: true })
+  @Index({ fulltext: true })
+  searchVector: any;
+
   @ManyToMany(() => Tag, (tag) => tag.opinion, { onDelete: 'CASCADE' })
   @JoinTable({
     name: 'opinion_tags',

@@ -25,6 +25,17 @@ export class TagsService {
     });
   }
 
+  async getTrendingTags() {
+    const tags = await this.TagsRepository.find({
+      order: {
+        count: 'DESC',
+      },
+      take: 10,
+    });
+
+    return tags;
+  }
+
   createMany(tagNames: string[]) {
     if (tagNames.length > 0) {
       return this.TagsRepository.create(
