@@ -4,11 +4,16 @@ import { FollowsController } from './follows.controller';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { Follow } from './entities/follow.entity';
 import { UsersModule } from 'src/users/users.module';
+import { NotificationModule } from 'src/notification/notification.module';
 
 @Module({
   controllers: [FollowsController],
   providers: [FollowsService],
-  imports: [TypeOrmModule.forFeature([Follow]), UsersModule],
+  imports: [
+    TypeOrmModule.forFeature([Follow]),
+    UsersModule,
+    NotificationModule,
+  ],
   exports: [FollowsService],
 })
 export class FollowsModule {}

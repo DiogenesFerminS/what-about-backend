@@ -11,6 +11,7 @@ import { LikesModule } from './likes/likes.module';
 import { FollowsModule } from './follows/follows.module';
 import { CommentsModule } from './comments/comments.module';
 import { TagsModule } from './tags/tags.module';
+import { NotificationModule } from './notification/notification.module';
 
 @Module({
   imports: [
@@ -41,6 +42,7 @@ import { TagsModule } from './tags/tags.module';
     FollowsModule,
     CommentsModule,
     TagsModule,
+    NotificationModule,
   ],
   controllers: [],
 })

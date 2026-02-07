@@ -18,7 +18,7 @@ export const OPINION_TEMPLATES = [
   {
     title: 'The mind behind Linux',
     content:
-      "People forget that #Linus Torvalds didn't just create Linux, he also gave us Git. Imagine a world without version control? He might be harsh sometimes, but he is a genius.",
+      "People forget that #Linus Torvalds didn't just create Linux, he also gave us Git. Imagine a world without version control? He might be harsh sometimes, but he is a genius. Linus Torvalds es un ingeniero de software finlandés, nacido el 28 de diciembre de 1969 en Helsinki, Finlandia.  Es conocido principalmente por crear el núcleo Linux y el sistema de control de versiones Git.  Inició el desarrollo de Linux en 1991 mientras estudiaba ciencias de la computación en la Universidad de Helsinki, con el objetivo de crear un sistema operativo libre basado en Unix. El núcleo Linux, lanzado originalmente como un proyecto personal, se convirtió en uno de los más importantes del mundo, sirviendo de base para sistemas operativos como Android, dispositivos embebidos y servidores en la nube. ",
     imageIndex: SEED_IMAGES[0],
   },
   {

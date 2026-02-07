@@ -22,6 +22,8 @@ import { RepostDto } from './dto/repost-opinion';
 import { extractTags } from 'src/common/helpers/extractTags';
 import { TagsService } from 'src/tags/tags.service';
 import { Tag } from 'src/tags/entities/tag.entity';
+import { NotificationService } from 'src/notification/notification.service';
+import { NotificationType } from 'src/notification/entities/notification.entity';
 
 @Injectable()
 export class OpinionsService {
@@ -32,6 +34,7 @@ export class OpinionsService {
     private usersService: UsersService,
     private followsService: FollowsService,
     private tagsService: TagsService,
+    private readonly notificationService: NotificationService,
   ) {}
 
   async createOpinion(
@@ -83,6 +86,7 @@ export class OpinionsService {
     userId: string,
   ) {
     const originalOpinion = await this.findOneById(opinionId);
+    const currentUser = await this.usersService.findOneById(userId);
 
     const itsRepost = !!originalOpinion.originalOpinion;
 
@@ -92,7 +96,7 @@ export class OpinionsService {
         : originalOpinion,
       content: content,
       title: title,
-      user: { id: userId },
+      user: currentUser,
     });
 
     const tagsNames = extractTags(content);
@@ -120,6 +124,12 @@ export class OpinionsService {
 
     try {
       const savedRepost = await this.opinionRepository.save(repost);
+      await this.notificationService.create({
+        creator: currentUser,
+        owner: originalOpinion.user,
+        opinion: originalOpinion,
+        type: NotificationType.REPOST,
+      });
       return savedRepost;
     } catch (error) {
       this.handleError(error);
@@ -127,10 +137,13 @@ export class OpinionsService {
   }
 
   async deleteRepost(opinionId: string, userId: string) {
+    const originalOpinion = await this.findOneById(opinionId);
+    const currentUser = await this.usersService.findOneById(userId);
+
     const existRepost = await this.opinionRepository.findOne({
       where: {
-        originalOpinion: { id: opinionId },
-        user: { id: userId },
+        originalOpinion: originalOpinion,
+        user: currentUser,
       },
       relations: ['tags'],
     });
@@ -150,6 +163,12 @@ export class OpinionsService {
 
     try {
       await this.opinionRepository.remove(existRepost);
+      await this.notificationService.delete({
+        creator: currentUser,
+        owner: originalOpinion.user,
+        type: NotificationType.REPOST,
+        opinion: originalOpinion,
+      });
       return {
         success: true,
       };

@@ -5,6 +5,8 @@ import { Repository } from 'typeorm';
 import { ResponseMessageType } from 'src/common/interfaces/http-response.interface';
 import { UsersService } from 'src/users/users.service';
 import { handleError } from 'src/common/helpers/handlerErrors';
+import { NotificationService } from 'src/notification/notification.service';
+import { NotificationType } from 'src/notification/entities/notification.entity';
 
 @Injectable()
 export class FollowsService {
@@ -14,6 +16,7 @@ export class FollowsService {
     @InjectRepository(Follow)
     private readonly followRepository: Repository<Follow>,
     private readonly usersService: UsersService,
+    private readonly notificationService: NotificationService,
   ) {}
   async create(currentUserId: string, targetUserId: string) {
     if (currentUserId === targetUserId) {
@@ -36,6 +39,12 @@ export class FollowsService {
 
     try {
       const savedFollow = await this.followRepository.save(newFollow);
+      await this.notificationService.create({
+        type: NotificationType.FOLLOW,
+        creator: currentUser,
+        owner: followindUser,
+        opinion: undefined,
+      });
       return savedFollow;
     } catch (error: unknown) {
       this.errorHandler(error);
@@ -70,6 +79,11 @@ export class FollowsService {
       });
     }
 
+    const [currentUser, targetUser] = await Promise.all([
+      this.usersService.findOneById(currentUserId),
+      this.usersService.findOneById(targetUserId),
+    ]);
+
     try {
       const result = await this.followRepository
         .createQueryBuilder()
@@ -79,6 +93,11 @@ export class FollowsService {
         .andWhere('following_id = :followingId', { followingId: targetUserId })
         .execute();
 
+      await this.notificationService.delete({
+        creator: currentUser,
+        owner: targetUser,
+        type: NotificationType.FOLLOW,
+      });
       return (result.affected ?? 0) > 0;
     } catch (error: unknown) {
       this.errorHandler(error);

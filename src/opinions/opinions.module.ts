@@ -7,6 +7,7 @@ import { CloudinaryModule } from 'src/cloudinary/cloudinary.module';
 import { UsersModule } from 'src/users/users.module';
 import { FollowsModule } from 'src/follows/follows.module';
 import { TagsModule } from 'src/tags/tags.module';
+import { NotificationModule } from 'src/notification/notification.module';
 
 @Module({
   controllers: [OpinionsController],
@@ -17,6 +18,7 @@ import { TagsModule } from 'src/tags/tags.module';
     UsersModule,
     FollowsModule,
     TagsModule,
+    NotificationModule,
   ],
   exports: [OpinionsService],
 })
