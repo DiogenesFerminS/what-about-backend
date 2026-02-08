@@ -41,7 +41,7 @@ export const SEED_USERS = [
     bio: 'Containers, Microservices and clean architecture. If it compiles, it works.',
     avatarUrl: null,
     location: null,
-    isVerified: false,
+    isVerified: true,
     isActive: true,
   },
   {

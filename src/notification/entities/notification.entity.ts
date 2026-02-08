@@ -4,6 +4,7 @@ import {
   Column,
   CreateDateColumn,
   Entity,
+  Index,
   JoinColumn,
   ManyToOne,
   PrimaryGeneratedColumn,
@@ -17,6 +18,7 @@ export enum NotificationType {
 }
 
 @Entity()
+@Index('IDX_UNREAD_NOTIFICATIONS', ['owner'], { where: '"isRead" = false' })
 export class Notification {
   @PrimaryGeneratedColumn('uuid')
   id: string;
@@ -37,6 +39,6 @@ export class Notification {
   @JoinColumn({ name: 'opinionId' })
   opinion: Opinion;
 
-  @CreateDateColumn()
+  @CreateDateColumn({ type: 'timestamptz', name: 'created_at' })
   createdAt: Date;
 }

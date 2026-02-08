@@ -36,14 +36,6 @@ export class AuthController {
   ) {
     const token = await this.authService.login(loginDto);
 
-    res.cookie('auth-token', token, {
-      httpOnly: true,
-      secure: this.configService.get('NODE_ENV') === 'production',
-      sameSite: 'lax',
-      maxAge: 1000 * 60 * 60,
-      path: '/',
-    });
-
     const response: {
       ok: boolean;
       message: ResponseMessageType;
@@ -55,6 +47,14 @@ export class AuthController {
 
     if (clientType === 'server-action') {
       response.data = { token };
+    } else {
+      res.cookie('auth-token', token, {
+        httpOnly: true,
+        secure: this.configService.get('NODE_ENV') === 'production',
+        sameSite: 'lax',
+        maxAge: 1000 * 60 * 60,
+        path: '/',
+      });
     }
 
     return response;
@@ -69,6 +69,7 @@ export class AuthController {
       maxAge: 0,
       path: '/',
     });
+    //TODO: Add token invalidation logic;
 
     return {
       ok: true,
