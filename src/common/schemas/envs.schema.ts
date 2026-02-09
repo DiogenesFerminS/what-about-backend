@@ -8,6 +8,7 @@ export const envs = Joi.object({
   POSTGRES_HOST: Joi.string().required(),
   POSTGRES_PORT: Joi.number().port().required(),
   JWT_SECRET: Joi.string().required(),
+  JWT_SECRET_REFRESH: Joi.string().required(),
   ROUND_OF_SALT: Joi.number().required(),
   SMTP_HOST: Joi.string().required(),
   SMTP_PORT: Joi.number().port().required(),
@@ -41,4 +42,5 @@ export interface Envs {
   CLOUDINARY_API_SECRET: string;
   CLOUDINARY_API_KEY: string;
   CLOUDINARY_CLOUD_NAME: string;
+  JWT_SECRET_REFRESH: string;
 }

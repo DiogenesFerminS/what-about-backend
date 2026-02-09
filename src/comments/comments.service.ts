@@ -38,7 +38,6 @@ export class CommentsService {
       where: { id: commentId },
       relations: ['user'],
     });
-
     if (!comment) {
       throw new NotFoundException({
         ok: false,
@@ -63,7 +62,6 @@ export class CommentsService {
     opinionId: string,
     { limit, page }: PaginationDto,
   ) {
-    // Verificar que la opinión existe
     await this.opinionsService.findOneById(opinionId);
 
     const skip = (page - 1) * limit;

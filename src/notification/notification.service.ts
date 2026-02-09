@@ -79,6 +79,8 @@ export class NotificationService {
     opinion: Opinion | undefined;
     creator: User;
   }) {
+    if (owner.id === creator.id) return;
+
     const newNotification = this.notificationsRepository.create({
       opinion: opinion,
       owner: owner,
@@ -113,6 +115,8 @@ export class NotificationService {
       owner,
       type,
     };
+
+    if (owner.id === creator.id) return;
 
     if (opinion) {
       whereFields.opinion = opinion;

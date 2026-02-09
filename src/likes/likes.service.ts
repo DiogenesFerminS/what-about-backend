@@ -50,6 +50,7 @@ export class LikesService {
       owner: opinion.user,
       type: NotificationType.LIKE,
     });
+
     return { isLiked: true };
   }
 

@@ -29,6 +29,39 @@ export class UsersService {
     this.handleError = handleError;
   }
 
+  async updateRefreshToken(newRefreshToken: string, userId: string) {
+    try {
+      await this.userRepository.update(
+        { id: userId },
+        { refreshToken: newRefreshToken },
+      );
+    } catch (error) {
+      throw new BadRequestException({
+        ok: false,
+        message: ResponseMessageType.BAD_REQUEST,
+        error:
+          error instanceof Error
+            ? error.message
+            : 'An unexpected error has occurred.',
+      });
+    }
+  }
+
+  async clearRefreshToken(userId: string) {
+    try {
+      await this.userRepository.update({ id: userId }, { refreshToken: null });
+    } catch (error) {
+      throw new BadRequestException({
+        ok: false,
+        message: ResponseMessageType.BAD_REQUEST,
+        error:
+          error instanceof Error
+            ? error.message
+            : 'An unexpected error has occurred.',
+      });
+    }
+  }
+
   async createUser(createUserDto: CreateUserDto, token: string) {
     const roundOfSalt: number = this.configService.getOrThrow('ROUND_OF_SALT');
     const passwordHashed = await bcrypt.hash(

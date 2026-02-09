@@ -90,6 +90,26 @@ export class OpinionsService {
 
     const itsRepost = !!originalOpinion.originalOpinion;
 
+    const existMyReport = await this.opinionRepository.find({
+      where: {
+        user: { id: userId },
+        originalOpinion: {
+          id: itsRepost
+            ? originalOpinion.originalOpinion.id
+            : originalOpinion.id,
+        },
+      },
+      relations: ['originalOpinion'],
+    });
+
+    if (existMyReport.length > 0) {
+      throw new BadRequestException({
+        ok: false,
+        message: ResponseMessageType.BAD_REQUEST,
+        error: 'You have already reposted this post',
+      });
+    }
+
     const repost = this.opinionRepository.create({
       originalOpinion: itsRepost
         ? originalOpinion.originalOpinion
@@ -142,8 +162,8 @@ export class OpinionsService {
 
     const existRepost = await this.opinionRepository.findOne({
       where: {
-        originalOpinion: originalOpinion,
-        user: currentUser,
+        originalOpinion: { id: originalOpinion.id },
+        user: { id: userId },
       },
       relations: ['tags'],
     });

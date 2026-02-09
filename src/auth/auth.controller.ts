@@ -5,7 +5,9 @@ import {
   Headers,
   Param,
   Post,
+  Req,
   Res,
+  UnauthorizedException,
   UsePipes,
 } from '@nestjs/common';
 import { AuthService } from './auth.service';
@@ -14,7 +16,7 @@ import { type LoginDto, loginSchema } from './dto/login.dto';
 import { Public } from 'src/common/decorators/public.decorator';
 import { type CreateUserDto, createUserSchema } from 'src/users/dto';
 import { ResponseMessageType } from 'src/common/interfaces/http-response.interface';
-import { type Response } from 'express';
+import { type Request, type Response } from 'express';
 import { type ResendEmailDto, resendEmailSchema } from './dto/resend-email.dto';
 import { type NewPasswordDto, newPasswordSchema } from './dto/new-password.dto';
 import { ConfigService } from '@nestjs/config';
@@ -32,48 +34,53 @@ export class AuthController {
   async login(
     @Res({ passthrough: true }) res: Response,
     @Body() loginDto: LoginDto,
-    @Headers('x-client-type') clientType: string,
   ) {
-    const token = await this.authService.login(loginDto);
-
-    const response: {
-      ok: boolean;
-      message: ResponseMessageType;
-      data?: { token: string };
-    } = {
-      ok: true,
-      message: ResponseMessageType.SUCCESS,
-    };
-
-    if (clientType === 'server-action') {
-      response.data = { token };
-    } else {
-      res.cookie('auth-token', token, {
-        httpOnly: true,
-        secure: this.configService.get('NODE_ENV') === 'production',
-        sameSite: 'lax',
-        maxAge: 1000 * 60 * 60,
-        path: '/',
-      });
-    }
-
-    return response;
-  }
-
-  @Get('logout')
-  logout(@Res({ passthrough: true }) res: Response) {
-    res.cookie('auth-token', null, {
-      httpOnly: true,
-      secure: this.configService.get('NODE_ENV') === 'production',
-      sameSite: 'lax',
-      maxAge: 0,
-      path: '/',
-    });
-    //TODO: Add token invalidation logic;
+    const data = await this.authService.login(loginDto);
 
     return {
       ok: true,
       message: ResponseMessageType.SUCCESS,
+      data: data,
+    };
+  }
+
+  @Post('refresh')
+  @Public()
+  async refreshToken(@Req() request: Request) {
+    const refreshToken = request.cookies['refresh-token'] as string | undefined;
+
+    if (!refreshToken) {
+      throw new UnauthorizedException({
+        ok: false,
+        message: ResponseMessageType.UNAUTHORIZED,
+        error: 'Token not found',
+      });
+    }
+    const data = await this.authService.refresh(refreshToken);
+    return {
+      ok: true,
+      message: ResponseMessageType.SUCCESS,
+      data,
+    };
+  }
+
+  @Post('logout')
+  async logout(@Req() request: Request) {
+    const refreshToken = request.cookies['refresh-token'] as string | undefined;
+
+    if (!refreshToken) {
+      throw new UnauthorizedException({
+        ok: false,
+        message: ResponseMessageType.UNAUTHORIZED,
+        error: 'Logout failed',
+      });
+    }
+
+    const data = await this.authService.logout(refreshToken);
+    return {
+      ok: true,
+      message: ResponseMessageType.SUCCESS,
+      data,
     };
   }
 

@@ -76,6 +76,14 @@ export class User {
   })
   resetPasswordToken: string | null;
 
+  @Column({
+    default: null,
+    nullable: true,
+    name: 'refresh_token',
+    type: 'text',
+  })
+  refreshToken: string | null;
+
   @OneToMany(() => Opinion, (opinion) => opinion.user)
   opinions: Opinion[];
 

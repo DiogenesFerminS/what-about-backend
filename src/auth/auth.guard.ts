@@ -35,7 +35,6 @@ export class AuthGuard implements CanActivate {
       .switchToHttp()
       .getRequest<Request & { user: { id: string; username: string } }>();
 
-    const response = context.switchToHttp().getResponse<Response>();
     const token = request.cookies['auth-token'] as string | undefined;
 
     if (!token) {
@@ -56,14 +55,6 @@ export class AuthGuard implements CanActivate {
 
       request.user = { id: payload.id, username: payload.username };
     } catch (error: unknown) {
-      response.clearCookie('auth-token', {
-        httpOnly: true,
-        secure: this.configService.get('NODE_ENV') === 'production',
-        sameSite: 'lax',
-        path: '/',
-        maxAge: 0,
-      });
-
       throw new UnauthorizedException({
         ok: false,
         error:

@@ -15,6 +15,8 @@ import { MailService } from 'src/mail/mail.service';
 import * as crypto from 'crypto';
 import { type ResendEmailDto } from './dto/resend-email.dto';
 import { NewPasswordDto } from './dto/new-password.dto';
+import { ConfigService } from '@nestjs/config';
+import { type Envs } from 'src/common/schemas/envs.schema';
 
 @Injectable()
 export class AuthService {
@@ -23,6 +25,7 @@ export class AuthService {
     private usersService: UsersService,
     private jwtService: JwtService,
     private mailService: MailService,
+    private configService: ConfigService<Envs>,
   ) {}
 
   async login({ term, password }: LoginDto) {
@@ -47,7 +50,114 @@ export class AuthService {
 
     const payload = { id: user.id, username: user.username };
 
-    return await this.jwtService.signAsync(payload);
+    const accessToken = await this.jwtService.signAsync(payload, {
+      expiresIn: '15min',
+    });
+
+    const refreshToken = await this.jwtService.signAsync(
+      { id: user.id },
+      {
+        expiresIn: '7d',
+        secret: this.configService.getOrThrow('JWT_SECRET_REFRESH'),
+      },
+    );
+
+    const refreshTokenHash = await bcrypt.hash(
+      refreshToken,
+      this.configService.getOrThrow('ROUND_OF_SALT'),
+    );
+
+    await this.usersService.updateRefreshToken(refreshTokenHash, user.id);
+
+    return {
+      accessToken,
+      refreshToken,
+    };
+  }
+
+  async logout(refreshToken: string) {
+    try {
+      const payload: { id: string } = await this.jwtService.verifyAsync(
+        refreshToken,
+        {
+          secret: this.configService.getOrThrow('JWT_SECRET_REFRESH'),
+        },
+      );
+
+      await this.usersService.clearRefreshToken(payload.id);
+      return { succes: true };
+    } catch {
+      throw new BadRequestException({
+        ok: false,
+        message: ResponseMessageType.BAD_REQUEST,
+        error: 'Logout failed',
+      });
+    }
+  }
+
+  async refresh(refreshToken: string) {
+    try {
+      const payload: { id: string } = await this.jwtService.verifyAsync(
+        refreshToken,
+        {
+          secret: this.configService.getOrThrow('JWT_SECRET_REFRESH'),
+        },
+      );
+
+      const user = await this.usersService.findOneById(payload.id);
+
+      if (!user || !user.refreshToken) {
+        throw new UnauthorizedException({
+          ok: false,
+          message: ResponseMessageType.UNAUTHORIZED,
+          error: 'Invalid token unauthorized',
+        });
+      }
+
+      const isValidToken = await bcrypt.compare(
+        refreshToken,
+        user.refreshToken,
+      );
+
+      if (!isValidToken) {
+        throw new UnauthorizedException({
+          ok: false,
+          message: ResponseMessageType.UNAUTHORIZED,
+          error: 'Invalid token unauthorized',
+        });
+      }
+
+      const accessPayload = { id: user.id, username: user.username };
+      const newAccessToken = await this.jwtService.signAsync(accessPayload, {
+        expiresIn: '15Min',
+      });
+
+      const newRefreshToken = await this.jwtService.signAsync(
+        { id: user.id },
+        {
+          expiresIn: '7d',
+          secret: this.configService.getOrThrow('JWT_SECRET_REFRESH'),
+        },
+      );
+
+      const refreshTokenHash = await bcrypt.hash(
+        newRefreshToken,
+        this.configService.getOrThrow('ROUND_OF_SALT'),
+      );
+
+      await this.usersService.updateRefreshToken(refreshTokenHash, user.id);
+
+      return {
+        refreshToken: newRefreshToken,
+        accessToken: newAccessToken,
+      };
+    } catch {
+      throw new BadRequestException({
+        ok: false,
+        message: ResponseMessageType.BAD_REQUEST,
+        error: 'Invalid token',
+      });
+    }
   }
 
   async createUser(createUserDto: CreateUserDto) {
