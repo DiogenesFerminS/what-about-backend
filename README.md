@@ -1,98 +1,65 @@
-<p align="center">
-  <a href="http://nestjs.com/" target="blank"><img src="https://nestjs.com/img/logo-small.svg" width="120" alt="Nest Logo" /></a>
-</p>
+# WHAT-ABOUT API 
 
-[circleci-image]: https://img.shields.io/circleci/build/github/nestjs/nest/master?token=abc123def456
-[circleci-url]: https://circleci.com/gh/nestjs/nest
+## WHAT IS WHAT-ABOUT?
+WHAT-ABOUT is an 'X'-style social network where users can share their opinions on various topics and explore the views of others. It offers all the core features of a modern social network, including likes, follows, comments, search filters, and partial multimedia support. This is a personal project developed by Diogenes Fermin, and I plan to continue its development to push its limits.
 
-  <p align="center">A progressive <a href="http://nodejs.org" target="_blank">Node.js</a> framework for building efficient and scalable server-side applications.</p>
-    <p align="center">
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/v/@nestjs/core.svg" alt="NPM Version" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/l/@nestjs/core.svg" alt="Package License" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/dm/@nestjs/common.svg" alt="NPM Downloads" /></a>
-<a href="https://circleci.com/gh/nestjs/nest" target="_blank"><img src="https://img.shields.io/circleci/build/github/nestjs/nest/master" alt="CircleCI" /></a>
-<a href="https://discord.gg/G7Qnnhy" target="_blank"><img src="https://img.shields.io/badge/discord-online-brightgreen.svg" alt="Discord"/></a>
-<a href="https://opencollective.com/nest#backer" target="_blank"><img src="https://opencollective.com/nest/backers/badge.svg" alt="Backers on Open Collective" /></a>
-<a href="https://opencollective.com/nest#sponsor" target="_blank"><img src="https://opencollective.com/nest/sponsors/badge.svg" alt="Sponsors on Open Collective" /></a>
-  <a href="https://paypal.me/kamilmysliwiec" target="_blank"><img src="https://img.shields.io/badge/Donate-PayPal-ff3f59.svg" alt="Donate us"/></a>
-    <a href="https://opencollective.com/nest#sponsor"  target="_blank"><img src="https://img.shields.io/badge/Support%20us-Open%20Collective-41B883.svg" alt="Support us"></a>
-  <a href="https://twitter.com/nestframework" target="_blank"><img src="https://img.shields.io/twitter/follow/nestframework.svg?style=social&label=Follow" alt="Follow us on Twitter"></a>
-</p>
-  <!--[![Backers on Open Collective](https://opencollective.com/nest/backers/badge.svg)](https://opencollective.com/nest#backer)
-  [![Sponsors on Open Collective](https://opencollective.com/nest/sponsors/badge.svg)](https://opencollective.com/nest#sponsor)-->
+## INDEX
 
-## Description
+1. [General Description](#WHAT-IS-WHAT-ABOUT?)
+2. [ENVS Guide]()
 
-[Nest](https://github.com/nestjs/nest) framework TypeScript starter repository.
+## ENVS GUIDE
 
-## Project setup
+| VARIABLE | TYPE | DESCRIPTION |
+| :--- | :---: | --- |
+| PORT | Number | Port where the API runs |
+| FRONTEND_URL | String | Allowed Origin (Frontend URL) |
+| POSTGRES_USER | String | PostgreSQL database user |
+| POSTGRES_PASS | String | PostgreSQL database password |
+| POSTGRES_NAME | String | PostgreSQL database name |
+| POSTGRES_HOST | String | PostgreSQL server host |
+| POSTGRES_PORT | Number | PostgreSQL server port |
+| JWT_SECRET | String | Secret key to validate access tokens |
+| JWT_SECRET_REFRESH | String | Secret key to validate refresh tokens |
+| ROUND_OF_SALT | Number | Salt rounds for hashing sensitive data|
+| SMTP_HOST | String | SMTP server host for sending emails |
+| SMTP_PORT | Number | SMTP server port |
+| SMTP_USER | String | SMTP server username |
+| SMTP_PASS | String | SMTP server password |
+| SMTP_SECURE | Boolean | Manages encryption with the SMTP server |
+| SMTP_FROM | String | Default sender name/address for emails |
+| CLOUDINARY_CLOUD_NAME | String | Cloudinary cloud name |
+| CLOUDINARY_API_KEY | Number | Cloudinary API key |
+| CLOUDINARY_API_SECRET | String | Cloudinary API secret |
 
-```bash
-$ npm install
-```
+For more information, you can check .env.templates.
 
-## Compile and run the project
+## TECHNOLOGIES / LIBRERIES
 
-```bash
-# development
-$ npm run start
+* JWT --> Token management
 
-# watch mode
-$ npm run start:dev
+* Cloudinary --> Cloud storage for multimedia files
 
-# production mode
-$ npm run start:prod
-```
+* Nodemailer --> Email sending
 
-## Run tests
+* TypeORM --> Entity and data management
 
-```bash
-# unit tests
-$ npm run test
+* Zod --> Schema and DTO validation
 
-# e2e tests
-$ npm run test:e2e
+## STEPS TO START THE PROJECT
 
-# test coverage
-$ npm run test:cov
-```
+1. Clone the repository
+2. Install dependencies ``` npm install ```
+3. Start the PostgreSQL container ``` docker compose up -d ```
+4. Run the seed script to load test data ``` npm run seed ```
+5. Start the development server ``` npm run start:dev ```
 
-## Deployment
+## ENTITY-RELATIONSHIP DIAGRAM
 
-When you're ready to deploy your NestJS application to production, there are some key steps you can take to ensure it runs as efficiently as possible. Check out the [deployment documentation](https://docs.nestjs.com/deployment) for more information.
+![ERD](https://res.cloudinary.com/dqclkzb8r/image/upload/v1770684922/der_teltz7.png)
+[LINK TO IMAGE](https://res.cloudinary.com/dqclkzb8r/image/upload/v1770684922/der_teltz7.png)
 
-If you are looking for a cloud-based platform to deploy your NestJS application, check out [Mau](https://mau.nestjs.com), our official platform for deploying NestJS applications on AWS. Mau makes deployment straightforward and fast, requiring just a few simple steps:
+## ABOUT AUTH 
+Authentication is implemented using a dual-JWT strategy. An AuthGuard protects all endpoints by validating the existence of the 'auth-token' cookie, except for routes marked with the @Public decorator. We use a short-lived access token (15 min) to authorize requests and a refresh token (7 days) to maintain the session. The refresh token is used via the POST /auth/refresh endpoint to generate a new pair of tokens, keeping the user session active seamlessly. Additionally, the currently logged-in user can be retrieved in controllers using the custom @GetUser decorator. Please note that all tokens are stored as HTTP-Only cookies for enhanced security.
 
-```bash
-$ npm install -g @nestjs/mau
-$ mau deploy
-```
-
-With Mau, you can deploy your application in just a few clicks, allowing you to focus on building features rather than managing infrastructure.
-
-## Resources
-
-Check out a few resources that may come in handy when working with NestJS:
-
-- Visit the [NestJS Documentation](https://docs.nestjs.com) to learn more about the framework.
-- For questions and support, please visit our [Discord channel](https://discord.gg/G7Qnnhy).
-- To dive deeper and get more hands-on experience, check out our official video [courses](https://courses.nestjs.com/).
-- Deploy your application to AWS with the help of [NestJS Mau](https://mau.nestjs.com) in just a few clicks.
-- Visualize your application graph and interact with the NestJS application in real-time using [NestJS Devtools](https://devtools.nestjs.com).
-- Need help with your project (part-time to full-time)? Check out our official [enterprise support](https://enterprise.nestjs.com).
-- To stay in the loop and get updates, follow us on [X](https://x.com/nestframework) and [LinkedIn](https://linkedin.com/company/nestjs).
-- Looking for a job, or have a job to offer? Check out our official [Jobs board](https://jobs.nestjs.com).
-
-## Support
-
-Nest is an MIT-licensed open source project. It can grow thanks to the sponsors and support by the amazing backers. If you'd like to join them, please [read more here](https://docs.nestjs.com/support).
-
-## Stay in touch
-
-- Author - [Kamil Myśliwiec](https://twitter.com/kammysliwiec)
-- Website - [https://nestjs.com](https://nestjs.com/)
-- Twitter - [@nestframework](https://twitter.com/nestframework)
-
-## License
-
-Nest is [MIT licensed](https://github.com/nestjs/nest/blob/master/LICENSE).
+tsvector
