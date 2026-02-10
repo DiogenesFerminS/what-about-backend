@@ -7,11 +7,12 @@ WHAT-ABOUT is an 'X'-style social network where users can share their opinions o
 
 1. [General Description](#WHAT-IS-WHAT-ABOUT?)
 2. [ENVS Guide](#ENVS-GUIDE)
-3. [Technologies / Libreries](#TECHNOLOGIES-/-LIBRERIES)
+3. [Technologies / Libreries](#TECHNOLOGIES-LIBRERIES)
 4. [Steps To Start The Project](#STEPS-TO-START-THE-PROJECT)
 5. [Entity-Relationship Diagram](#ENTITY-RELATIONSHIP-DIAGRAM)
 6. [About Auth](#ABOUT-AUTH)
 7. [Opinion Search Engine](#OPINION-SEARCH-ENGINE)
+8. [VALIDATIONS](#VALIDATIONS)
 
 ## ENVS GUIDE
 
@@ -39,7 +40,9 @@ WHAT-ABOUT is an 'X'-style social network where users can share their opinions o
 
 For more information, you can check .env.templates.
 
-## TECHNOLOGIES / LIBRERIES
+## TECHNOLOGIES LIBRERIES
+
+* NEST JS
 
 * JWT --> Token management
 
@@ -70,3 +73,6 @@ Authentication is implemented using a dual-JWT strategy. An AuthGuard protects a
 
 ## OPINION SEARCH ENGINE
 To optimize post searching, I avoided the typical and inefficient LIKE %query% pattern. Instead, I implemented PostgreSQL Full-Text Search using a searchVector column (type tsvector) in the Opinion entity. This approach tokenizes text and removes irrelevant words (stop words). I also integrated the unaccent extension to ensure accents are ignored during indexing (normalization). A database trigger automatically updates the searchVector by combining the title and content on every INSERT or UPDATE, guaranteeing high-speed performance for all search queries
+
+## VALIDATIONS
+Para la validacion de los dtos de cada endpoint en lugar de usar el class-validator decidi mejor usar Zod + un custom pipe ya que en el front tambien uso zod y manejo mejor la libreria, tambie use Joi para validar las envs.
