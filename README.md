@@ -6,7 +6,12 @@ WHAT-ABOUT is an 'X'-style social network where users can share their opinions o
 ## INDEX
 
 1. [General Description](#WHAT-IS-WHAT-ABOUT?)
-2. [ENVS Guide]()
+2. [ENVS Guide](#ENVS-GUIDE)
+3. [Technologies / Libreries](#TECHNOLOGIES-/-LIBRERIES)
+4. [Steps To Start The Project](#STEPS-TO-START-THE-PROJECT)
+5. [Entity-Relationship Diagram](#ENTITY-RELATIONSHIP-DIAGRAM)
+6. [About Auth](#ABOUT-AUTH)
+7. [Opinion Search Engine](#OPINION-SEARCH-ENGINE)
 
 ## ENVS GUIDE
 
@@ -62,4 +67,6 @@ For more information, you can check .env.templates.
 ## ABOUT AUTH 
 Authentication is implemented using a dual-JWT strategy. An AuthGuard protects all endpoints by validating the existence of the 'auth-token' cookie, except for routes marked with the @Public decorator. We use a short-lived access token (15 min) to authorize requests and a refresh token (7 days) to maintain the session. The refresh token is used via the POST /auth/refresh endpoint to generate a new pair of tokens, keeping the user session active seamlessly. Additionally, the currently logged-in user can be retrieved in controllers using the custom @GetUser decorator. Please note that all tokens are stored as HTTP-Only cookies for enhanced security.
 
-tsvector
+
+## OPINION SEARCH ENGINE
+To optimize post searching, I avoided the typical and inefficient LIKE %query% pattern. Instead, I implemented PostgreSQL Full-Text Search using a searchVector column (type tsvector) in the Opinion entity. This approach tokenizes text and removes irrelevant words (stop words). I also integrated the unaccent extension to ensure accents are ignored during indexing (normalization). A database trigger automatically updates the searchVector by combining the title and content on every INSERT or UPDATE, guaranteeing high-speed performance for all search queries
