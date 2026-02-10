@@ -1,18 +1,24 @@
 # WHAT-ABOUT API 
+![NestJS](https://img.shields.io/badge/nestjs-%23E0234E.svg?style=for-the-badge&logo=nestjs&logoColor=white)
+![TypeScript](https://img.shields.io/badge/typescript-%23007ACC.svg?style=for-the-badge&logo=typescript&logoColor=white)
+![Postgres](https://img.shields.io/badge/postgres-%23316192.svg?style=for-the-badge&logo=postgresql&logoColor=white)
+![Docker](https://img.shields.io/badge/docker-%230db7ed.svg?style=for-the-badge&logo=docker&logoColor=white)
+![JWT](https://img.shields.io/badge/JWT-black?style=for-the-badge&logo=JSON%20web%20tokens)
+
 
 ## WHAT IS WHAT-ABOUT?
 WHAT-ABOUT is an 'X'-style social network where users can share their opinions on various topics and explore the views of others. It offers all the core features of a modern social network, including likes, follows, comments, search filters, and partial multimedia support. This is a personal project developed by Diogenes Fermin, and I plan to continue its development to push its limits.
 
 ## INDEX
 
-1. [General Description](#WHAT-IS-WHAT-ABOUT?)
-2. [ENVS Guide](#ENVS-GUIDE)
-3. [Technologies / Libreries](#TECHNOLOGIES-LIBRERIES)
-4. [Steps To Start The Project](#STEPS-TO-START-THE-PROJECT)
-5. [Entity-Relationship Diagram](#ENTITY-RELATIONSHIP-DIAGRAM)
-6. [About Auth](#ABOUT-AUTH)
-7. [Opinion Search Engine](#OPINION-SEARCH-ENGINE)
-8. [VALIDATIONS](#VALIDATIONS)
+1. [General Description](#what-is-what-about?)
+2. [ENVS Guide](#envs-guide)
+3. [Technologies / Libreries](#technologies-libreries)
+4. [Steps To Start The Project](#steps-to-start-the-project)
+5. [Entity-Relationship Diagram](#entity-relationship-diagram)
+6. [About Auth](#about-auth)
+7. [Opinion Search Engine](#opinion-search-engine)
+8. [VALIDATIONS](#validations)
 
 ## ENVS GUIDE
 
@@ -58,9 +64,10 @@ For more information, you can check .env.templates.
 
 1. Clone the repository
 2. Install dependencies ``` npm install ```
-3. Start the PostgreSQL container ``` docker compose up -d ```
-4. Run the seed script to load test data ``` npm run seed ```
-5. Start the development server ``` npm run start:dev ```
+3. Create the .env file and assign the environment variables
+4. Start the PostgreSQL container ``` docker compose up -d ```
+5. Run the seed script to load test data ``` npm run seed ```
+6. Start the development server ``` npm run start:dev ```
 
 ## ENTITY-RELATIONSHIP DIAGRAM
 
@@ -75,4 +82,4 @@ Authentication is implemented using a dual-JWT strategy. An AuthGuard protects a
 To optimize post searching, I avoided the typical and inefficient LIKE %query% pattern. Instead, I implemented PostgreSQL Full-Text Search using a searchVector column (type tsvector) in the Opinion entity. This approach tokenizes text and removes irrelevant words (stop words). I also integrated the unaccent extension to ensure accents are ignored during indexing (normalization). A database trigger automatically updates the searchVector by combining the title and content on every INSERT or UPDATE, guaranteeing high-speed performance for all search queries
 
 ## VALIDATIONS
-Para la validacion de los dtos de cada endpoint en lugar de usar el class-validator decidi mejor usar Zod + un custom pipe ya que en el front tambien uso zod y manejo mejor la libreria, tambie use Joi para validar las envs.
+For DTO validation, I opted for Zod combined with a custom pipe instead of the standard class-validator. This choice ensures consistency with the frontend (which also uses Zod) and leverages my proficiency with the library. Additionally, I implemented Joi for environment variable validation.
