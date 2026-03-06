@@ -18,7 +18,7 @@ WHAT-ABOUT is an 'X'-style social network where users can share their opinions o
 5. [Entity-Relationship Diagram](#entity-relationship-diagram)
 6. [About Auth](#about-auth)
 7. [Opinion Search Engine](#opinion-search-engine)
-8. [VALIDATIONS](#validations)
+8. [Validations](#validations)
 
 ## ENVS GUIDE
 
