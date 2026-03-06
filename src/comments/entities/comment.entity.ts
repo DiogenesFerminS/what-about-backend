@@ -18,7 +18,7 @@ export class Comment {
   @Column({ type: 'varchar', length: 500 })
   content: string;
 
-  @ManyToOne(() => User, (user) => user.comments)
+  @ManyToOne(() => User, (user) => user.comments, { onDelete: 'CASCADE' })
   @JoinColumn({ name: 'user_id' })
   user: User;
 
